@@ -1,7 +1,7 @@
 {
-	"name": "cyrus-linear-event-transport",
-	"version": "0.2.8",
-	"description": "Linear event transport for receiving and verifying Linear webhooks",
+	"name": "cyrus-zhipu-runner",
+	"version": "0.1.0",
+	"description": "Zhipu AI (GLM) runner for Cyrus",
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -11,18 +11,18 @@
 	"scripts": {
 		"build": "tsc",
 		"dev": "tsc --watch",
+		"test": "vitest",
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@linear/sdk": "^64.0.0",
+		"openai": "^4.77.1",
 		"cyrus-core": "workspace:*",
-		"fastify": "^5.2.0"
+		"dotenv": "^16.4.5",
+		"zod": "^3.24.1"
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
-		"typescript": "^5.3.3"
-	},
-	"publishConfig": {
-		"access": "public"
+		"typescript": "^5.3.3",
+		"vitest": "^1.1.0"
 	}
 }

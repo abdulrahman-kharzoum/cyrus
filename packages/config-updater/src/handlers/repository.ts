@@ -35,6 +35,17 @@ function getRepoNameFromUrl(repoUrl: string): string {
 }
 
 /**
+ * Detect git platform from repository URL
+ * Supports both gitlab.com and self-hosted GitLab instances
+ */
+function detectPlatformFromUrl(url: string): "github" | "gitlab" {
+	const lowerUrl = url.toLowerCase();
+	if (lowerUrl.includes("gitlab")) return "gitlab";
+	if (lowerUrl.includes("github")) return "github";
+	return "github"; // Default to GitHub for unknown URLs
+}
+
+/**
  * Handle repository cloning or verification
  * - Clones repositories to ~/.cyrus/repos/<repo-name> using GitHub CLI (gh)
  * - If repository exists, verify it's a git repo and do nothing
@@ -98,9 +109,16 @@ export async function handleRepository(
 			};
 		}
 
-		// Clone the repository using gh
+		// Clone the repository using appropriate method based on platform
 		try {
-			const cloneCmd = `gh repo clone "${payload.repository_url}" "${repoPath}"`;
+			// Detect platform from URL if not explicitly provided
+			const platform = payload.gitPlatform || detectPlatformFromUrl(payload.repository_url);
+			
+			// Use git clone for GitLab (works with glab auth), gh repo clone for GitHub
+			const cloneCmd = platform === "gitlab"
+				? `git clone "${payload.repository_url}" "${repoPath}"`
+				: `gh repo clone "${payload.repository_url}" "${repoPath}"`;
+			
 			await execAsync(cloneCmd);
 
 			// Verify the clone was successful
@@ -108,7 +126,7 @@ export async function handleRepository(
 				return {
 					success: false,
 					error: "Repository clone verification failed",
-					details: `GitHub CLI clone command completed, but the cloned directory at ${repoPath} does not appear to be a valid Git repository.`,
+					details: `Clone command completed, but the cloned directory at ${repoPath} does not appear to be a valid Git repository.`,
 				};
 			}
 
@@ -119,16 +137,19 @@ export async function handleRepository(
 					path: repoPath,
 					name: repoName,
 					repository_url: payload.repository_url,
+					gitPlatform: platform,
 					action: "cloned",
 				},
 			};
 		} catch (error) {
 			const errorMessage =
 				error instanceof Error ? error.message : String(error);
+			const platform = payload.gitPlatform || detectPlatformFromUrl(payload.repository_url);
+			const cliName = platform === "gitlab" ? "git" : "GitHub CLI (gh)";
 			return {
 				success: false,
 				error: "Failed to clone repository",
-				details: `Could not clone repository from ${payload.repository_url} using GitHub CLI: ${errorMessage}. Please verify the URL is correct, you have access to the repository, and gh is authenticated.`,
+				details: `Could not clone repository from ${payload.repository_url} using ${cliName}: ${errorMessage}. Please verify the URL is correct and you have access to the repository.`,
 			};
 		}
 	} catch (error) {

@@ -7,7 +7,8 @@ import type { RepositoryConfig } from "cyrus-core";
 export interface RepositoryPayload {
 	repository_url: string; // Git clone URL
 	repository_name: string; // Repository name (required)
-	githubUrl?: string; // GitHub repository URL (e.g., "https://github.com/org/repo") - used for Linear select signal
+	gitPlatform?: "github" | "gitlab"; // Git hosting platform (default: "github")
+	githubUrl?: string; // @deprecated Use repository_url. GitHub repository URL - used for Linear select signal
 }
 
 /**
@@ -28,6 +29,10 @@ export interface CyrusConfigPayload {
 	ngrokAuthToken?: string;
 	stripeCustomerId?: string;
 	linearWorkspaceSlug?: string;
+	linearToken?: string;
+	linearRefreshToken?: string;
+	linearWorkspaceId?: string;
+	linearWorkspaceName?: string;
 	defaultModel?: string;
 	defaultFallbackModel?: string;
 	global_setup_script?: string;

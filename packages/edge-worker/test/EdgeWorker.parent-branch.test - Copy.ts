@@ -1,11 +1,7 @@
 import { readFile } from "node:fs/promises";
 import { LinearClient } from "@linear/sdk";
 import { ClaudeRunner } from "cyrus-claude-runner";
-import type {
-	AgentSessionCreatedWebhook,
-	EdgeWorkerConfig,
-	RepositoryConfig,
-} from "cyrus-core";
+import type { LinearAgentSessionCreatedWebhook } from "cyrus-core";
 import {
 	isAgentSessionCreatedWebhook,
 	isAgentSessionPromptedWebhook,
@@ -15,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AgentSessionManager } from "../src/AgentSessionManager.js";
 import { EdgeWorker } from "../src/EdgeWorker.js";
 import { SharedApplicationServer } from "../src/SharedApplicationServer.js";
+import type { EdgeWorkerConfig, RepositoryConfig } from "../src/types.js";
 
 // Mock fs/promises
 vi.mock("fs/promises", () => ({
@@ -63,9 +60,9 @@ describe("EdgeWorker - Parent Branch Handling", () => {
 		isActive: true,
 		allowedTools: ["Read", "Edit"],
 		labelPrompts: {
-			debugger: { labels: ["bug", "error"] },
-			builder: { labels: ["feature", "enhancement"] },
-			scoper: { labels: ["scope", "research"] },
+			debugger: ["bug", "error"],
+			builder: ["feature", "enhancement"],
+			scoper: ["scope", "research"],
 		},
 	};
 
@@ -219,28 +216,16 @@ Base Branch: {{base_branch}}`;
 
 	it("should use repository baseBranch when issue has no parent", async () => {
 		// Arrange
-		const createdWebhook: AgentSessionCreatedWebhook = {
+		const createdWebhook: LinearAgentSessionCreatedWebhook = {
 			type: "Issue",
 			action: "agentSessionCreated",
 			organizationId: "test-workspace",
-			appUserId: "user-123",
-			createdAt: new Date("2023-01-01T00:00:00.000Z"),
-			oauthClientId: "client-123",
 			agentSession: {
 				id: "agent-session-123",
-				type: "AgentSession",
-				appUserId: "user-123",
-				createdAt: "2023-01-01T00:00:00.000Z",
-				organizationId: "test-workspace",
-				status: "started",
-				updatedAt: "2023-01-01T00:00:00.000Z",
 				issue: {
 					id: "issue-123",
 					identifier: "TEST-123",
-					team: { id: "team-123", key: "TEST", name: "Test Team" },
-					teamId: "team-123",
-					title: "Test Title",
-					url: "http://linear.app/issue/TEST-123",
+					team: { key: "TEST" },
 				},
 			},
 		};
@@ -284,28 +269,16 @@ Base Branch: {{base_branch}}`;
 			}),
 		});
 
-		const createdWebhook: AgentSessionCreatedWebhook = {
+		const createdWebhook: LinearAgentSessionCreatedWebhook = {
 			type: "Issue",
 			action: "agentSessionCreated",
 			organizationId: "test-workspace",
-			appUserId: "user-123",
-			createdAt: new Date("2023-01-01T00:00:00.000Z"),
-			oauthClientId: "client-123",
 			agentSession: {
 				id: "agent-session-123",
-				type: "AgentSession",
-				appUserId: "user-123",
-				createdAt: "2023-01-01T00:00:00.000Z",
-				organizationId: "test-workspace",
-				status: "started",
-				updatedAt: "2023-01-01T00:00:00.000Z",
 				issue: {
 					id: "issue-123",
 					identifier: "TEST-123",
-					team: { id: "team-123", key: "TEST", name: "Test Team" },
-					teamId: "team-123",
-					title: "Test Title",
-					url: "http://linear.app/issue/TEST-123",
+					team: { key: "TEST" },
 				},
 			},
 		};
@@ -352,28 +325,16 @@ Base Branch: {{base_branch}}`;
 			}),
 		});
 
-		const createdWebhook: AgentSessionCreatedWebhook = {
+		const createdWebhook: LinearAgentSessionCreatedWebhook = {
 			type: "Issue",
 			action: "agentSessionCreated",
 			organizationId: "test-workspace",
-			appUserId: "user-123",
-			createdAt: new Date("2023-01-01T00:00:00.000Z"),
-			oauthClientId: "client-123",
 			agentSession: {
 				id: "agent-session-123",
-				type: "AgentSession",
-				appUserId: "user-123",
-				createdAt: "2023-01-01T00:00:00.000Z",
-				organizationId: "test-workspace",
-				status: "started",
-				updatedAt: "2023-01-01T00:00:00.000Z",
 				issue: {
 					id: "issue-123",
 					identifier: "TEST-123",
-					team: { id: "team-123", key: "TEST", name: "Test Team" },
-					teamId: "team-123",
-					title: "Test Title",
-					url: "http://linear.app/issue/TEST-123",
+					team: { key: "TEST" },
 				},
 			},
 		};
@@ -422,28 +383,16 @@ Base Branch: {{base_branch}}`;
 			}),
 		});
 
-		const createdWebhook: AgentSessionCreatedWebhook = {
+		const createdWebhook: LinearAgentSessionCreatedWebhook = {
 			type: "Issue",
 			action: "agentSessionCreated",
 			organizationId: "test-workspace",
-			appUserId: "user-123",
-			createdAt: new Date("2023-01-01T00:00:00.000Z"),
-			oauthClientId: "client-123",
 			agentSession: {
 				id: "agent-session-123",
-				type: "AgentSession",
-				appUserId: "user-123",
-				createdAt: "2023-01-01T00:00:00.000Z",
-				organizationId: "test-workspace",
-				status: "started",
-				updatedAt: "2023-01-01T00:00:00.000Z",
 				issue: {
 					id: "issue-123",
 					identifier: "TEST-123",
-					team: { id: "team-123", key: "TEST", name: "Test Team" },
-					teamId: "team-123",
-					title: "Test Title",
-					url: "http://linear.app/issue/TEST-123",
+					team: { key: "TEST" },
 				},
 			},
 		};

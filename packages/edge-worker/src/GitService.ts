@@ -1,5 +1,5 @@
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, statSync } from "node:fs";
+import { existsSync, mkdirSync, statSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { basename, join } from "node:path";
 
@@ -203,20 +203,24 @@ export class GitService {
 			mkdirSync(repository.workspaceBaseDir, { recursive: true });
 
 			// Check if worktree already exists
+			let worktrees = "";
 			try {
-				const worktrees = execSync("git worktree list --porcelain", {
+				worktrees = execSync("git worktree list --porcelain", {
 					cwd: repository.repositoryPath,
 					encoding: "utf-8",
 				});
 
 				if (worktrees.includes(workspacePath)) {
 					this.logger.info(
-						`Worktree already exists at ${workspacePath}, using existing`,
+						`Worktree already exists at ${workspacePath}, ensuring it is fresh...`,
 					);
-					return {
-						path: workspacePath,
-						isGitWorktree: true,
-					};
+					// Fetch and reset to ensure freshness if it's an existing worktree
+					try {
+						execSync(`git fetch origin`, { cwd: workspacePath, stdio: "pipe" });
+						// We don't know the intended base branch yet, so we'll do this after determining it
+					} catch (e) {
+						this.logger.warn(`Initial fetch failed: ${(e as Error).message}`);
+					}
 				}
 			} catch (_e) {
 				// git worktree command failed, continue with creation
@@ -235,48 +239,47 @@ export class GitService {
 			}
 
 			// Determine base branch for this issue
-			let baseBranch = repository.baseBranch;
+			// Logic:
+			// 1. Use repository.baseBranch if configured
+			// 2. Default to "staging" if not configured
+			// 3. Fallback priority: Configured -> staging -> main
+			let candidateBranch = repository.baseBranch || "staging";
+			let baseBranch = candidateBranch;
+			
+			// Check if the candidate branch exists
+			const candidateExists = await this.branchExists(
+				candidateBranch,
+				repository.repositoryPath,
+			);
 
-			// Check if issue has a parent
-			try {
-				const parent = await (issue as any).parent;
-				if (parent) {
-					this.logger.info(
-						`Issue ${issue.identifier} has parent: ${parent.identifier}`,
-					);
-
-					// Get parent's branch name
-					const parentRawBranchName =
-						parent.branchName ||
-						`${parent.identifier}-${parent.title
-							?.toLowerCase()
-							.replace(/\s+/g, "-")
-							.substring(0, 30)}`;
-					const parentBranchName = this.sanitizeBranchName(parentRawBranchName);
-
-					// Check if parent branch exists
-					const parentBranchExists = await this.branchExists(
-						parentBranchName,
+			if (!candidateExists) {
+				this.logger.warn(
+					`Configured/Default branch '${candidateBranch}' not found.`,
+				);
+				
+				// If we haven't tried 'staging' yet (i.e., config was something else), try it now
+				if (candidateBranch !== "staging") {
+					const stagingExists = await this.branchExists(
+						"staging",
 						repository.repositoryPath,
 					);
-
-					if (parentBranchExists) {
-						baseBranch = parentBranchName;
-						this.logger.info(
-							`Using parent issue branch '${parentBranchName}' as base for sub-issue ${issue.identifier}`,
-						);
+					if (stagingExists) {
+						this.logger.info("Falling back to 'staging' branch.");
+						baseBranch = "staging";
 					} else {
-						this.logger.info(
-							`Parent branch '${parentBranchName}' not found, using default base branch '${repository.baseBranch}'`,
-						);
+						this.logger.info("'staging' branch not found, falling back to 'main'.");
+						baseBranch = "main";
 					}
+				} else {
+					// We already tried staging and it failed, so fallback to main
+					this.logger.info("'staging' branch not found, falling back to 'main'.");
+					baseBranch = "main";
 				}
-			} catch (_error) {
-				// Parent field might not exist or couldn't be fetched, use default base branch
-				this.logger.info(
-					`No parent issue found for ${issue.identifier}, using default base branch '${repository.baseBranch}'`,
-				);
 			}
+
+			this.logger.info(
+				`Using base branch '${baseBranch}' for issue ${issue.identifier}`,
+			);
 
 			// Fetch latest changes from remote
 			this.logger.info("Fetching latest changes from remote...");
@@ -345,9 +348,9 @@ export class GitService {
 						} catch {
 							// Base branch doesn't exist locally either, fall back to remote default
 							this.logger.info(
-								`Base branch '${baseBranch}' not found locally, falling back to remote ${repository.baseBranch}`,
+								`Base branch '${baseBranch}' not found locally, falling back to remote ${repository.baseBranch || "staging"}`,
 							);
-							const defaultRemoteBranch = `origin/${repository.baseBranch}`;
+							const defaultRemoteBranch = `origin/${repository.baseBranch || "staging"}`;
 							worktreeCmd = `git worktree add "${workspacePath}" -b "${branchName}" "${defaultRemoteBranch}"`;
 						}
 					}
@@ -366,10 +369,86 @@ export class GitService {
 				worktreeCmd = `git worktree add "${workspacePath}" "${branchName}"`;
 			}
 
-			execSync(worktreeCmd, {
-				cwd: repository.repositoryPath,
-				stdio: "pipe",
-			});
+			if (worktreeCmd !== "") {
+				execSync(worktreeCmd, {
+					cwd: repository.repositoryPath,
+					stdio: "pipe",
+				});
+			}
+
+			// Check if we need to refresh an existing worktree (we skipped return earlier)
+			const isExistingWorktree = worktrees.includes(workspacePath);
+			if (isExistingWorktree) {
+				this.logger.info(`Refreshing existing worktree at ${workspacePath}...`);
+				try {
+					execSync(`git fetch origin`, { cwd: workspacePath, stdio: "pipe" });
+					// Try to reset to origin/baseBranch if possible, or just pull
+					try {
+						execSync(`git reset --hard "origin/${baseBranch}"`, {
+							cwd: workspacePath,
+							stdio: "pipe",
+						});
+					} catch (e) {
+						this.logger.warn(
+							`Could not reset to origin/${baseBranch}, just pulling: ${(e as Error).message}`,
+						);
+						execSync(`git pull origin "${baseBranch}"`, {
+							cwd: workspacePath,
+							stdio: "pipe",
+						});
+					}
+				} catch (e) {
+					this.logger.warn(`Failed to refresh worktree: ${(e as Error).message}`);
+				}
+			} else {
+				// New worktree - creation already handled above
+			}
+
+			// Verify worktree population - fixing the "empty worktree" bug
+			const files = readdirSync(workspacePath);
+			// Stricter check: Ignore metadata files like .git and README
+			const hasFiles = files.some(
+				(f) =>
+					f !== ".git" &&
+					f.toLowerCase() !== "readme.md" &&
+					f.toLowerCase() !== "readme" &&
+					f.toLowerCase() !== "license",
+			);
+			if (!hasFiles) {
+				this.logger.warn(
+					`Worktree created at ${workspacePath} appears empty (no substantial project files found). Attempting explicit checkout...`,
+				);
+				try {
+					// Force checkout of the base branch into the current directory
+					// We use -- . to checkout all files from the commit
+					execSync(`git checkout -f "${baseBranch}" -- .`, {
+						cwd: workspacePath,
+						stdio: "pipe",
+					});
+
+					// Re-verify
+					const filesAfter = readdirSync(workspacePath);
+					const hasFilesAfter = filesAfter.some(
+						(f) =>
+							f !== ".git" &&
+							f.toLowerCase() !== "readme.md" &&
+							f.toLowerCase() !== "readme" &&
+							f.toLowerCase() !== "license",
+					);
+					if (!hasFilesAfter) {
+						throw new Error(
+							`Worktree remains empty after checkout attempt from ${baseBranch}`,
+						);
+					}
+					this.logger.info("Explicit checkout populated the worktree.");
+				} catch (checkoutError) {
+					this.logger.error(
+						"Failed to populate worktree:",
+						(checkoutError as Error).message,
+					);
+					throw new Error("Failed to populate worktree files");
+				}
+			}
 
 			// First, run the global setup script if configured
 			if (globalSetupScript) {
@@ -435,6 +514,7 @@ export class GitService {
 			return {
 				path: workspacePath,
 				isGitWorktree: true,
+				baseBranch: baseBranch,
 			};
 		} catch (error) {
 			this.logger.error(

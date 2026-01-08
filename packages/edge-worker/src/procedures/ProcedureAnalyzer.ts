@@ -88,9 +88,10 @@ Analyze the Linear issue request and classify it into ONE of these categories:
 **transient**: Request involves MCP tools, temporary files, or no codebase interaction.
 - Examples: "Search the web for X", "Generate a diagram", "Use Linear MCP to check issues"
 
-**planning**: Request has vague requirements, needs clarification, or asks for an implementation plan.
-- Examples: "Can you help with the authentication system?", "I need to improve performance", "Add a new feature for user management"
+**planning**: Request has vague requirements, needs clarification, or asks for an implementation plan. 
 - Use when requirements are unclear, missing details, or user asks for a plan/proposal
+- Use when the request contains **@ask** or **[ASK MODE]**
+- Examples: "Can you help with the authentication system?", "I need to improve performance", "Add a new feature for user management", "@ask how this works"
 - DO NOT use if the request has clear, specific requirements (use "code" instead)
 - DO NOT use for adding/writing tests, fixing tests, or other test-related work (use "code" instead)
 
@@ -139,8 +140,25 @@ IMPORTANT: Respond with ONLY the classification word, nothing else.`;
 	 */
 	async determineRoutine(
 		requestText: string,
+		labels: string[] = [],
 	): Promise<ProcedureAnalysisDecision> {
 		try {
+			// Pre-check for Ask Mode triggers
+			const isAskMode =
+				/@ask\b|\[ASK MODE\]/i.test(requestText) ||
+				labels.some((l) => /@ask\b|\[ASK MODE\]/i.test(l));
+
+			if (isAskMode) {
+				const planningProcedure = this.procedures.get("plan-mode");
+				if (planningProcedure) {
+					return {
+						classification: "planning",
+						procedure: planningProcedure,
+						reasoning: "Ask Mode detected via trigger tag (@ask or [ASK MODE])",
+					};
+				}
+			}
+
 			// Classify the request using analysis runner
 			const result = await this.analysisRunner.query(
 				`Classify this Linear issue request:\n\n${requestText}`,
