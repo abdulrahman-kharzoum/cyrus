@@ -46,6 +46,11 @@ export const SUBROUTINES = {
 		promptPath: "subroutines/git-gh.md",
 		description: "Commit changes and create/update PR",
 	},
+	gitGitlab: {
+		name: "git-gitlab",
+		promptPath: "subroutines/git-gitlab.md",
+		description: "Commit changes and create/update MR using GitLab CLI",
+	},
 	conciseSummary: {
 		name: "concise-summary",
 		promptPath: "subroutines/concise-summary.md",
@@ -89,10 +94,8 @@ export const SUBROUTINES = {
 	planSummary: {
 		name: "plan-summary",
 		promptPath: "subroutines/plan-summary.md",
-		singleTurn: true,
 		description: "Present clarifying questions or implementation plan",
 		suppressThoughtPosting: true,
-		disallowedTools: ["mcp__linear__create_comment"],
 	},
 	userTesting: {
 		name: "user-testing",

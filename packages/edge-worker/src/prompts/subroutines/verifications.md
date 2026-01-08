@@ -22,11 +22,17 @@ Use the issue tracker `get_issue` tool to fetch the current issue details. The i
 - Verify code follows project conventions and patterns
 - Check for any code smells or areas that need refactoring
 
-### 3. Testing & Verification
-- Run all relevant tests and ensure they pass
-- **Do NOT fix failing tests yourself** - just report the failures
-- Verify the implementation meets all requirements from the issue description
-- Check that existing functionality wasn't broken by the changes
+### 3. Testing & Verification (IMPORTANT: Check Project Preferences FIRST)
+- **Check `.cyrus/preferences.md` in the system prompt** to see the project's testing policy.
+- If the policy is **Manual Testing Only**:
+    - Skip running automated tests.
+    - Instead, verify that the implementation is logically correct and matches the requirements.
+    - Use `npm run build` as the primary verification of structural integrity.
+- If automated tests are required:
+    - Run all relevant tests and ensure they pass.
+- **Do NOT fix failing tests yourself** - just report the failures.
+- Verify the implementation meets all requirements from the issue description.
+- Check that existing functionality wasn't broken by the changes.
 
 ### 4. Linting & Type Checking
 - Run linting tools and report any issues

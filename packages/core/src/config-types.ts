@@ -16,7 +16,10 @@ import type { Issue } from "./issue-tracker/types.js";
  * resolvePath("/absolute/path") // "/absolute/path"
  * resolvePath("relative/path") // "/current/working/dir/relative/path"
  */
-export function resolvePath(path: string): string {
+export function resolvePath(path: string | undefined | null): string {
+	if (!path) {
+		return "";
+	}
 	if (path.startsWith("~/")) {
 		return resolve(homedir(), path.slice(2));
 	}
@@ -43,7 +46,9 @@ export interface RepositoryConfig {
 	// Git configuration
 	repositoryPath: string; // Local git repository path
 	baseBranch: string; // Branch to create worktrees from (main, master, etc.)
-	githubUrl?: string; // GitHub repository URL (e.g., "https://github.com/org/repo") - used for Linear select signal
+	repositoryUrl?: string; // Git repository URL (e.g., "https://github.com/org/repo" or "https://gitlab.example.com/org/repo")
+	gitPlatform?: "github" | "gitlab"; // Git hosting platform (default: "github")
+	githubUrl?: string; // @deprecated Use repositoryUrl instead. GitHub repository URL - used for Linear select signal
 
 	// Linear configuration
 	linearWorkspaceId: string; // Linear workspace/team ID
@@ -128,6 +133,10 @@ export interface EdgeWorkerConfig {
 
 	// Linear configuration (global)
 	linearWorkspaceSlug?: string; // Linear workspace URL slug (e.g., "ceedar" from "https://linear.app/ceedar/...")
+	linearToken?: string; // Global OAuth token for Linear (default for new repos)
+	linearRefreshToken?: string; // Global OAuth refresh token
+	linearWorkspaceId?: string; // Global Linear workspace ID
+	linearWorkspaceName?: string; // Global Linear workspace display name
 
 	// Claude config (shared across all repos)
 	defaultAllowedTools?: string[];
@@ -223,6 +232,10 @@ export interface EdgeConfig {
 	ngrokAuthToken?: string;
 	stripeCustomerId?: string;
 	linearWorkspaceSlug?: string; // Linear workspace URL slug (e.g., "ceedar" from "https://linear.app/ceedar/...")
+	linearToken?: string; // Global OAuth token for Linear
+	linearRefreshToken?: string; // Global OAuth refresh token
+	linearWorkspaceId?: string; // Global Linear workspace ID
+	linearWorkspaceName?: string; // Global Linear workspace display name
 	defaultModel?: string; // Default Claude model to use across all repositories
 	defaultFallbackModel?: string; // Default fallback model if primary model is unavailable
 	global_setup_script?: string; // Optional path to global setup script that runs for all repositories

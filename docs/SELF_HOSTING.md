@@ -221,11 +221,15 @@ Cyrus automatically loads `~/.cyrus/.env` on startup. You'll see Cyrus start up 
 
 ---
 
-## Step 6: Set Up GitHub (Optional)
+## Step 6: Set Up Git Platform (Optional)
 
 For Cyrus to create pull requests, configure Git and GitHub CLI authentication.
 
+### GitHub
 See the **[Git & GitHub Setup Guide](./GIT_GITHUB.md)** for complete instructions.
+
+### GitLab
+See the **[Git & GitLab Setup Guide](./GIT_GITLAB.md)** for complete instructions.
 
 ---
 

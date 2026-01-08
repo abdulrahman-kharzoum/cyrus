@@ -20,7 +20,9 @@ All verification checks have passed. Now commit your changes and create or updat
   ```bash
   gh pr edit
   ```
-- **IMPORTANT**: Make sure the PR is created for the correct base branch associated with the current working branch. Do NOT assume the base branch is the default one.
+- **IMPORTANT**: Make sure the PR is created for the correct base branch: **{{base_branch}}**. 
+  - Do NOT assume the base branch is the default one.
+  - Check the target branch in the PR creation output.
 - Ensure the PR has a clear, descriptive title
 - Write a comprehensive PR description including:
   - Summary of changes

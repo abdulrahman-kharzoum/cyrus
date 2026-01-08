@@ -20,6 +20,7 @@ export interface IssueMinimal {
 export interface Workspace {
 	path: string;
 	isGitWorktree: boolean;
+	baseBranch?: string;
 	historyPath?: string;
 }
 
@@ -36,6 +37,7 @@ export interface CyrusAgentSession {
 	// NOTE: Only one of these will be populated
 	claudeSessionId?: string; // Claude-specific session ID (assigned once it initializes)
 	geminiSessionId?: string; // Gemini-specific session ID (assigned once it initializes)
+	zhipuSessionId?: string; // Zhipu-specific session ID (assigned once it initializes)
 	agentRunner?: IAgentRunner;
 	metadata?: {
 		model?: string;
@@ -53,6 +55,7 @@ export interface CyrusAgentSession {
 				completedAt: number;
 				claudeSessionId: string | null;
 				geminiSessionId: string | null;
+				zhipuSessionId: string | null;
 			}>;
 			/** State for validation loop (when current subroutine uses usesValidationLoop) */
 			validationLoop?: {
@@ -75,6 +78,7 @@ export interface CyrusAgentSession {
 export interface CyrusAgentSessionEntry {
 	claudeSessionId?: string; // originated in this Claude session (if using Claude)
 	geminiSessionId?: string; // originated in this Gemini session (if using Gemini)
+	zhipuSessionId?: string; // originated in this Zhipu session (if using Zhipu)
 	linearAgentActivityId?: string; // got assigned this ID in linear, after creation, for this 'agent activity'
 	type: "user" | "assistant" | "system" | "result";
 	content: string;

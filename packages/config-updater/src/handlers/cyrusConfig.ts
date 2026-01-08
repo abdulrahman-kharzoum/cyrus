@@ -55,7 +55,14 @@ export async function handleCyrusConfig(
 				baseBranch: repo.baseBranch,
 			};
 
-			// Add optional GitHub URL
+			// Add optional Git fields
+			if (repo.repositoryUrl) {
+				repoConfig.repositoryUrl = repo.repositoryUrl;
+			}
+			if (repo.gitPlatform) {
+				repoConfig.gitPlatform = repo.gitPlatform;
+			}
+			// Legacy support for githubUrl
 			if (repo.githubUrl) {
 				repoConfig.githubUrl = repo.githubUrl;
 			}
@@ -125,6 +132,18 @@ export async function handleCyrusConfig(
 
 		if (payload.linearWorkspaceSlug) {
 			config.linearWorkspaceSlug = payload.linearWorkspaceSlug;
+		}
+		if (payload.linearToken) {
+			config.linearToken = payload.linearToken;
+		}
+		if (payload.linearRefreshToken) {
+			config.linearRefreshToken = payload.linearRefreshToken;
+		}
+		if (payload.linearWorkspaceId) {
+			config.linearWorkspaceId = payload.linearWorkspaceId;
+		}
+		if (payload.linearWorkspaceName) {
+			config.linearWorkspaceName = payload.linearWorkspaceName;
 		}
 
 		if (payload.defaultModel) {

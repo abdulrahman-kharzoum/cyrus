@@ -10,6 +10,7 @@ import {
 	type EdgeConfig,
 } from "cyrus-core";
 import { BaseCommand } from "./ICommand.js";
+import { URL } from "node:url";
 
 /**
  * Workspace credentials extracted from existing repository configurations
@@ -101,6 +102,17 @@ export class SelfAddRepoCommand extends BaseCommand {
 
 			// Find workspaces with Linear credentials
 			const workspaces = new Map<string, WorkspaceCredentials>();
+
+			// Add global credentials if available
+			if (config.linearWorkspaceId && config.linearToken) {
+				workspaces.set(config.linearWorkspaceId, {
+					id: config.linearWorkspaceId,
+					name: config.linearWorkspaceName || config.linearWorkspaceId,
+					token: config.linearToken,
+					refreshToken: config.linearRefreshToken,
+				});
+			}
+
 			for (const repo of config.repositories) {
 				if (
 					repo.linearWorkspaceId &&
@@ -163,21 +175,75 @@ export class SelfAddRepoCommand extends BaseCommand {
 				console.log(`Repository already exists at ${repositoryPath}`);
 			} else {
 				console.log(`Cloning ${url}...`);
+
+				let cloneUrl = url;
+				// Sanitize token: remove whitespace and surrounding quotes
+				const githubToken = process.env.GITHUB_TOKEN?.trim().replace(
+					/^["']|["']$/g,
+					"",
+				);
+
+				if (githubToken && url.startsWith("https://")) {
+					try {
+						const urlObj = new URL(url);
+						if (
+							(urlObj.hostname === "github.com" ||
+								urlObj.hostname === "www.github.com") &&
+							!urlObj.username &&
+							!urlObj.password
+						) {
+							// Use token as username (works for PATs)
+							urlObj.username = githubToken;
+							cloneUrl = urlObj.toString();
+							console.log(
+								"Using GITHUB_TOKEN from environment for authentication.",
+							);
+						}
+					} catch (e) {
+						// Ignore invalid URLs
+					}
+				}
+
 				try {
-					execSync(`git clone ${url} ${repositoryPath}`, { stdio: "inherit" });
+					execSync(`git clone ${cloneUrl} ${repositoryPath}`, {
+						stdio: "inherit",
+					});
 				} catch {
 					this.logError("Failed to clone repository");
+					if (githubToken && cloneUrl !== url) {
+						this.logError("\n❌ Authentication Failed using GITHUB_TOKEN.");
+						this.logError("Possible causes:");
+						this.logError(
+							"1. Token is Fine-grained but not scoped to the Organization (common error).",
+						);
+						this.logError(
+							"2. Token lacks 'repo' scope (Classic) or 'Contents' permission.",
+						);
+						this.logError(
+							"3. Organization requires SAML SSO authorization for this token.",
+						);
+						this.logError(
+							"Tip: Try using a Classic Personal Access Token (starts with 'ghp_') if unsure.",
+						);
+					}
 					process.exit(1);
 				}
 			}
 
 			// Generate UUID and add to config
 			const id = randomUUID();
+			
+			// Detect git platform from URL (supports self-hosted GitLab)
+			const gitPlatform: "github" | "gitlab" = url.toLowerCase().includes("gitlab") 
+				? "gitlab" 
+				: "github";
 
 			config.repositories.push({
 				id,
 				name: repoName,
 				repositoryPath,
+				repositoryUrl: url,
+				gitPlatform,
 				baseBranch: DEFAULT_BASE_BRANCH,
 				workspaceBaseDir: resolve(this.app.cyrusHome, DEFAULT_WORKTREES_DIR),
 				linearWorkspaceId: selectedWorkspace.id,
@@ -191,6 +257,7 @@ export class SelfAddRepoCommand extends BaseCommand {
 
 			console.log(`\nAdded: ${repoName}`);
 			console.log(`  ID: ${id}`);
+			console.log(`  Platform: ${gitPlatform}`);
 			console.log(`  Workspace: ${selectedWorkspace.name}`);
 			process.exit(0);
 		} finally {

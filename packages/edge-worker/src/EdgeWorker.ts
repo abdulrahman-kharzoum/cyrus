@@ -1,4 +1,5 @@
 import { EventEmitter } from "node:events";
+import { existsSync } from "node:fs";
 import { mkdir, readdir, readFile, rename, writeFile } from "node:fs/promises";
 import { basename, dirname, extname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -59,6 +60,7 @@ import {
 	resolvePath,
 } from "cyrus-core";
 import { GeminiRunner } from "cyrus-gemini-runner";
+import { ZhipuRunner } from "cyrus-zhipu-runner";
 import {
 	LinearEventTransport,
 	LinearIssueTrackerService,
@@ -72,6 +74,7 @@ import {
 	ProcedureAnalyzer,
 	type ProcedureDefinition,
 	type RequestClassification,
+	SUBROUTINES,
 	type SubroutineDefinition,
 } from "./procedures/index.js";
 import type {
@@ -159,32 +162,6 @@ export class EdgeWorker extends EventEmitter {
 
 				// Use platform-agnostic getIssueLabels method
 				return await issueTracker.getIssueLabels(issueId);
-			},
-			fetchIssueDescription: async (
-				issueId: string,
-				workspaceId: string,
-			): Promise<string | undefined> => {
-				// Find repository for this workspace
-				const repo = Array.from(this.repositories.values()).find(
-					(r) => r.linearWorkspaceId === workspaceId,
-				);
-				if (!repo) return undefined;
-
-				// Get issue tracker for this repository
-				const issueTracker = this.issueTrackers.get(repo.id);
-				if (!issueTracker) return undefined;
-
-				// Fetch issue and get description
-				try {
-					const issue = await issueTracker.fetchIssue(issueId);
-					return issue?.description ?? undefined;
-				} catch (error) {
-					console.error(
-						`[EdgeWorker] Failed to fetch issue description for routing:`,
-						error,
-					);
-					return undefined;
-				}
 			},
 			hasActiveSession: (issueId: string, repositoryId: string) => {
 				const sessionManager = this.agentSessionManagers.get(repositoryId);
@@ -717,13 +694,21 @@ export class EdgeWorker extends EventEmitter {
 		);
 
 		// Get next subroutine (advancement already handled by AgentSessionManager)
-		const nextSubroutine = this.procedureAnalyzer.getCurrentSubroutine(session);
+		let nextSubroutine = this.procedureAnalyzer.getCurrentSubroutine(session);
 
 		if (!nextSubroutine) {
 			console.log(
 				`[Subroutine Transition] Procedure complete for session ${linearAgentActivitySessionId}`,
 			);
 			return;
+		}
+
+		// Swap git-gh for git-gitlab if platform is gitlab
+		if (nextSubroutine.name === "git-gh" && repo.gitPlatform === "gitlab") {
+			console.log(
+				"[Subroutine Transition] Swapping git-gh for git-gitlab based on repository platform",
+			);
+			nextSubroutine = SUBROUTINES.gitGitlab;
 		}
 
 		console.log(
@@ -1791,7 +1776,7 @@ export class EdgeWorker extends EventEmitter {
 			const issueDescription =
 				`${issue.title}\n\n${fullIssue.description || ""}`.trim();
 			const routingDecision =
-				await this.procedureAnalyzer.determineRoutine(issueDescription);
+				await this.procedureAnalyzer.determineRoutine(issueDescription, labels);
 			finalProcedure = routingDecision.procedure;
 			finalClassification = routingDecision.classification;
 
@@ -1909,6 +1894,7 @@ export class EdgeWorker extends EventEmitter {
 				labels, // Pass labels for runner selection and model override
 				undefined, // maxTurns
 				currentSubroutine?.singleTurn, // singleTurn flag
+				promptType, // Pass promptType for runner selection
 			);
 
 			console.log(
@@ -1918,7 +1904,9 @@ export class EdgeWorker extends EventEmitter {
 			const runner =
 				runnerType === "claude"
 					? new ClaudeRunner(runnerConfig)
-					: new GeminiRunner(runnerConfig);
+					: runnerType === "gemini"
+						? new GeminiRunner(runnerConfig)
+						: new ZhipuRunner(runnerConfig);
 
 			// Store runner by comment ID
 			agentSessionManager.addAgentRunner(linearAgentActivitySessionId, runner);
@@ -2539,11 +2527,48 @@ export class EdgeWorker extends EventEmitter {
 	 *
 	 * If no runner label is found, defaults to claude.
 	 */
-	private determineRunnerFromLabels(labels: string[]): {
-		runnerType: "claude" | "gemini";
+	private determineRunnerFromLabels(
+		labels: string[],
+		promptType?: string,
+	): {
+		runnerType: "claude" | "gemini" | "zhipu";
 		modelOverride?: string;
 		fallbackModelOverride?: string;
 	} {
+		const lowercaseLabels = (labels || []).map((label) => label.toLowerCase());
+		const hasOpusLabel = lowercaseLabels.includes("opus");
+		const hasGeminiLabel = lowercaseLabels.includes("gemini");
+		const hasZhipuLabel =
+			lowercaseLabels.includes("zhipu") || lowercaseLabels.includes("glm");
+
+		// Auto-select runner/model based on task type if no specific model overrides present
+		if (!hasOpusLabel && promptType) {
+			if (promptType === "planning" || promptType === "question") {
+				// For planning/question, default to cheaper models
+				// Priority: Zhipu (cheapest) -> Gemini Flash -> Claude Sonnet
+				if (hasZhipuLabel || labels.length === 0) {
+					return {
+						runnerType: "zhipu",
+						modelOverride: "glm-4.7",
+						fallbackModelOverride: "glm-4",
+					};
+				}
+				if (hasGeminiLabel) {
+					return {
+						runnerType: "gemini",
+						modelOverride: "gemini-2.5-flash",
+						fallbackModelOverride: "gemini-2.5-flash-lite",
+					};
+				}
+				// Default to Claude Sonnet for planning/question if not specified otherwise
+				return {
+					runnerType: "claude",
+					modelOverride: "sonnet",
+					fallbackModelOverride: "haiku",
+				};
+			}
+		}
+
 		if (!labels || labels.length === 0) {
 			return {
 				runnerType: "claude",
@@ -2552,9 +2577,16 @@ export class EdgeWorker extends EventEmitter {
 			};
 		}
 
-		const lowercaseLabels = labels.map((label) => label.toLowerCase());
+		// Check for specific Zhipu labels
+		if (hasZhipuLabel || lowercaseLabels.includes("glm-4.7")) {
+			return {
+				runnerType: "zhipu",
+				modelOverride: "glm-4.7",
+				fallbackModelOverride: "glm-4",
+			};
+		}
 
-		// Check for Gemini labels first
+		// Check for specific Gemini labels
 		if (
 			lowercaseLabels.includes("gemini-2.5-pro") ||
 			lowercaseLabels.includes("gemini-2.5")
@@ -2590,7 +2622,7 @@ export class EdgeWorker extends EventEmitter {
 				fallbackModelOverride: "gemini-2.5-pro",
 			};
 		}
-		if (lowercaseLabels.includes("gemini")) {
+		if (hasGeminiLabel) {
 			return {
 				runnerType: "gemini",
 				modelOverride: "gemini-2.5-pro",
@@ -2599,7 +2631,7 @@ export class EdgeWorker extends EventEmitter {
 		}
 
 		// Check for Claude labels
-		if (lowercaseLabels.includes("opus")) {
+		if (hasOpusLabel) {
 			return {
 				runnerType: "claude",
 				modelOverride: "opus",
@@ -2613,7 +2645,9 @@ export class EdgeWorker extends EventEmitter {
 				fallbackModelOverride: "haiku",
 			};
 		}
-		// Default to claude if no runner labels found
+
+		// Default to claude if no specific runner labels found
+		// Note: We already handled the planning/question defaults above
 		return {
 			runnerType: "claude",
 			modelOverride: "opus",
@@ -3033,94 +3067,27 @@ Focus on addressing the specific request in the mention. You can use the Linear 
 		issue: Issue,
 		repository: RepositoryConfig,
 	): Promise<string> {
-		// Start with the repository's default base branch
-		let baseBranch = repository.baseBranch;
+		// Simple logic: use repository baseBranch (typically "staging"), fall back to "main"
+		// This mirrors the logic in GitService.createGitWorktree to ensure the prompt
+		// matches the actual worktree state.
+		let baseBranch = repository.baseBranch || "staging";
 
-		// Check if this issue has the graphite label - if so, blocked-by relationship takes priority
-		const isGraphiteIssue = await this.hasGraphiteLabel(issue, repository);
+		// Check if the base branch exists, fall back to "main" if not
+		const baseBranchExists = await this.gitService.branchExists(
+			baseBranch,
+			repository.repositoryPath,
+		);
 
-		if (isGraphiteIssue) {
-			// For Graphite stacking: use the blocking issue's branch as base
-			const blockingIssues = await this.fetchBlockingIssues(issue);
-
-			if (blockingIssues.length > 0) {
-				// Use the first blocking issue's branch (typically there's only one in a stack)
-				const blockingIssue = blockingIssues[0]!;
-				console.log(
-					`[EdgeWorker] Issue ${issue.identifier} has graphite label and is blocked by ${blockingIssue.identifier}`,
-				);
-
-				// Get blocking issue's branch name
-				const blockingRawBranchName =
-					blockingIssue.branchName ||
-					`${blockingIssue.identifier}-${(blockingIssue.title ?? "")
-						.toLowerCase()
-						.replace(/\s+/g, "-")
-						.substring(0, 30)}`;
-				const blockingBranchName = this.gitService.sanitizeBranchName(
-					blockingRawBranchName,
-				);
-
-				// Check if blocking issue's branch exists
-				const blockingBranchExists = await this.gitService.branchExists(
-					blockingBranchName,
-					repository.repositoryPath,
-				);
-
-				if (blockingBranchExists) {
-					baseBranch = blockingBranchName;
-					console.log(
-						`[EdgeWorker] Using blocking issue branch '${blockingBranchName}' as base for Graphite-stacked issue ${issue.identifier}`,
-					);
-					return baseBranch;
-				}
-				console.log(
-					`[EdgeWorker] Blocking issue branch '${blockingBranchName}' not found, falling back to parent/default`,
-				);
-			}
-		}
-
-		// Check if issue has a parent (standard sub-issue behavior)
-		try {
-			const parent = await issue.parent;
-			if (parent) {
-				console.log(
-					`[EdgeWorker] Issue ${issue.identifier} has parent: ${parent.identifier}`,
-				);
-
-				// Get parent's branch name
-				const parentRawBranchName =
-					parent.branchName ||
-					`${parent.identifier}-${parent.title
-						?.toLowerCase()
-						.replace(/\s+/g, "-")
-						.substring(0, 30)}`;
-				const parentBranchName =
-					this.gitService.sanitizeBranchName(parentRawBranchName);
-
-				// Check if parent branch exists
-				const parentBranchExists = await this.gitService.branchExists(
-					parentBranchName,
-					repository.repositoryPath,
-				);
-
-				if (parentBranchExists) {
-					baseBranch = parentBranchName;
-					console.log(
-						`[EdgeWorker] Using parent issue branch '${parentBranchName}' as base for sub-issue ${issue.identifier}`,
-					);
-				} else {
-					console.log(
-						`[EdgeWorker] Parent branch '${parentBranchName}' not found, using default base branch '${repository.baseBranch}'`,
-					);
-				}
-			}
-		} catch (_error) {
-			// Parent field might not exist or couldn't be fetched, use default base branch
+		if (!baseBranchExists) {
 			console.log(
-				`[EdgeWorker] No parent issue found for ${issue.identifier}, using default base branch '${repository.baseBranch}'`,
+				`[EdgeWorker] Base branch '${baseBranch}' not found, falling back to 'main'`,
 			);
+			baseBranch = "main";
 		}
+
+		console.log(
+			`[EdgeWorker] Using base branch '${baseBranch}' for issue ${issue.identifier}`,
+		);
 
 		return baseBranch;
 	}
@@ -3138,75 +3105,7 @@ Focus on addressing the specific request in the mention. You can use the Linear 
 		};
 	}
 
-	/**
-	 * Fetch issues that block this issue (i.e., issues this one is "blocked by")
-	 * Uses the inverseRelations field with type "blocks"
-	 *
-	 * Linear relations work like this:
-	 * - When Issue A "blocks" Issue B, a relation is created with:
-	 *   - issue = A (the blocker)
-	 *   - relatedIssue = B (the blocked one)
-	 *   - type = "blocks"
-	 *
-	 * So to find "who blocks Issue B", we need inverseRelations (where B is the relatedIssue)
-	 * and look for type === "blocks", then get the `issue` field (the blocker).
-	 *
-	 * @param issue The issue to fetch blocking issues for
-	 * @returns Array of issues that block this one, or empty array if none
-	 */
-	private async fetchBlockingIssues(issue: Issue): Promise<Issue[]> {
-		try {
-			// inverseRelations contains relations where THIS issue is the relatedIssue
-			// When type is "blocks", it means the `issue` field blocks THIS issue
-			const inverseRelations = await issue.inverseRelations();
-			if (!inverseRelations?.nodes) {
-				return [];
-			}
 
-			const blockingIssues: Issue[] = [];
-
-			for (const relation of inverseRelations.nodes) {
-				// "blocks" type in inverseRelations means the `issue` blocks this one
-				if (relation.type === "blocks") {
-					// The `issue` field is the one that blocks THIS issue
-					const blockingIssue = await relation.issue;
-					if (blockingIssue) {
-						blockingIssues.push(blockingIssue);
-					}
-				}
-			}
-
-			console.log(
-				`[EdgeWorker] Issue ${issue.identifier} is blocked by ${blockingIssues.length} issue(s): ${blockingIssues.map((i) => i.identifier).join(", ") || "none"}`,
-			);
-
-			return blockingIssues;
-		} catch (error) {
-			console.error(
-				`[EdgeWorker] Failed to fetch blocking issues for ${issue.identifier}:`,
-				error,
-			);
-			return [];
-		}
-	}
-
-	/**
-	 * Check if an issue has the graphite label
-	 *
-	 * @param issue The issue to check
-	 * @param repository The repository configuration
-	 * @returns True if the issue has the graphite label
-	 */
-	private async hasGraphiteLabel(
-		issue: Issue,
-		repository: RepositoryConfig,
-	): Promise<boolean> {
-		const graphiteConfig = repository.labelPrompts?.graphite;
-		const graphiteLabels = graphiteConfig?.labels ?? ["graphite"];
-
-		const issueLabels = await this.fetchIssueLabels(issue);
-		return graphiteLabels.some((label) => issueLabels.includes(label));
-	}
 
 	/**
 	 * Format Linear comments into a threaded structure that mirrors the Linear UI
@@ -4488,6 +4387,23 @@ ${newComment ? `New comment to address:\n${newComment.body}\n\n` : ""}Please ana
 			// Use scenarios system prompt for fallback cases
 			const sharedInstructions = await this.loadSharedInstructions();
 			systemPrompt = sharedInstructions;
+
+			// Add GitLab specific instructions
+			const isGitLab =
+				input.repository.gitPlatform === "gitlab" ||
+				input.repository.repositoryUrl?.includes("gitlab") ||
+				input.repository.githubUrl?.includes("gitlab"); // Legacy fallback
+
+			if (isGitLab) {
+				systemPrompt +=
+					"\n\n# GitLab Mode\nYou are working with a GitLab repository. Use local `git` commands for branching/committing, but use `glab` CLI for platform operations instead of `gh`.\n- Create Merge Request: `glab mr create --fill --yes --remove-source-branch`\n- View Merge Request: `glab mr view`\n";
+			}
+
+			// Add project-specific settings (context and preferences)
+			const projectSettings = await this.loadProjectSettings(input.repository);
+			if (projectSettings) {
+				systemPrompt += `\n\n${projectSettings}`;
+			}
 		}
 
 		// 3. Build issue context using appropriate builder
@@ -4692,6 +4608,45 @@ ${input.userComment}
 	}
 
 	/**
+	 * Load project-specific settings (.cyrus/project-context.md and .cyrus/preferences.md)
+	 */
+	private async loadProjectSettings(
+		repo: RepositoryConfig,
+	): Promise<string | null> {
+		const repoPath = repo.repositoryPath;
+		const contextPath = join(repoPath, ".cyrus", "project-context.md");
+		const preferencesPath = join(repoPath, ".cyrus", "preferences.md");
+
+		let settings = "";
+
+		// Load project context
+		if (existsSync(contextPath)) {
+			try {
+				const context = await readFile(contextPath, "utf-8");
+				settings += `\n# Project Context\n${context}\n`;
+				console.log(`[EdgeWorker] Loaded project context from ${contextPath}`);
+			} catch (e) {
+				console.warn(`[EdgeWorker] Failed to read ${contextPath}: ${e}`);
+			}
+		}
+
+		// Load preferences
+		if (existsSync(preferencesPath)) {
+			try {
+				const preferences = await readFile(preferencesPath, "utf-8");
+				settings += `\n# Project Preferences\n${preferences}\n`;
+				console.log(
+					`[EdgeWorker] Loaded project preferences from ${preferencesPath}`,
+				);
+			} catch (e) {
+				console.warn(`[EdgeWorker] Failed to read ${preferencesPath}: ${e}`);
+			}
+		}
+
+		return settings.trim() || null;
+	}
+
+	/**
 	 * Adapter method for prompt assembly - extracts just the prompt string
 	 */
 	private async determineSystemPromptForAssembly(
@@ -4768,7 +4723,8 @@ ${input.userComment}
 		labels?: string[],
 		maxTurns?: number,
 		singleTurn?: boolean,
-	): { config: AgentRunnerConfig; runnerType: "claude" | "gemini" } {
+		promptType?: string,
+	): { config: AgentRunnerConfig; runnerType: "claude" | "gemini" | "zhipu" } {
 		// Configure PostToolUse hook for playwright screenshots
 		const hooks: Partial<Record<HookEvent, HookCallbackMatcher[]>> = {
 			PostToolUse: [
@@ -4793,7 +4749,10 @@ ${input.userComment}
 		};
 
 		// Determine runner type and model override from labels
-		const runnerSelection = this.determineRunnerFromLabels(labels || []);
+		const runnerSelection = this.determineRunnerFromLabels(
+			labels || [],
+			promptType,
+		);
 		let runnerType = runnerSelection.runnerType;
 		let modelOverride = runnerSelection.modelOverride;
 		let fallbackModelOverride = runnerSelection.fallbackModelOverride;
@@ -4805,8 +4764,12 @@ ${input.userComment}
 			fallbackModelOverride = "haiku";
 		} else if (session.geminiSessionId && runnerType !== "gemini") {
 			runnerType = "gemini";
-			modelOverride = "gemini-2.5-pro";
-			fallbackModelOverride = "gemini-2.5-flash";
+			modelOverride = "gemini-3-pro-preview";
+			fallbackModelOverride = "gemini-2.5-pro";
+		} else if (session.zhipuSessionId && runnerType !== "zhipu") {
+			runnerType = "zhipu";
+			modelOverride = "glm-4.7";
+			fallbackModelOverride = "glm-4";
 		}
 
 		// Log model override if found
@@ -5289,7 +5252,6 @@ ${input.userComment}
 		repositoryId: string,
 		repositoryName: string,
 		selectionMethod:
-			| "description-tag"
 			| "label-based"
 			| "project-based"
 			| "team-based"
@@ -5310,8 +5272,6 @@ ${input.userComment}
 			let methodDisplay: string;
 			if (selectionMethod === "user-selected") {
 				methodDisplay = "selected by user";
-			} else if (selectionMethod === "description-tag") {
-				methodDisplay = "matched via [repo=...] tag in issue description";
 			} else if (selectionMethod === "label-based") {
 				methodDisplay = "matched via label-based routing";
 			} else if (selectionMethod === "project-based") {
@@ -5951,7 +5911,7 @@ ${input.userComment}
 			clientSecret,
 			refreshToken: repo.linearRefreshToken,
 			workspaceId,
-			onTokenRefresh: async (tokens) => {
+			onTokenRefresh: async (tokens: { accessToken: string; refreshToken: string }) => {
 				// Update repository config state (for EdgeWorker's internal tracking)
 				for (const [, repository] of this.repositories) {
 					if (repository.linearWorkspaceId === workspaceId) {

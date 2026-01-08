@@ -240,6 +240,12 @@ export class SelfAuthCommand extends BaseCommand {
 		tokens: { accessToken: string; refreshToken?: string },
 		workspace: { id: string; name: string },
 	): void {
+		// Update global credentials
+		config.linearToken = tokens.accessToken;
+		config.linearRefreshToken = tokens.refreshToken;
+		config.linearWorkspaceId = workspace.id;
+		config.linearWorkspaceName = workspace.name;
+
 		// Update all repositories matching this workspace (or unset workspace)
 		for (const repo of config.repositories) {
 			if (
