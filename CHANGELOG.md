@@ -4,6 +4,54 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+- **Case-insensitive label matching for orchestrator/debugger modes** - Label matching for orchestrator, debugger, builder, and scoper modes is now case-insensitive, matching the existing behavior of model selection. Labels like "Orchestrator" in Linear now correctly match config entries like `["orchestrator"]`. ([CYPACK-701](https://linear.app/ceedar/issue/CYPACK-701), [#746](https://github.com/ceedaragents/cyrus/pull/746))
+- **Haiku model label support** - Fixed "haiku" as a supported model label for label-based model selection. Uses sonnet as fallback model for retry scenarios. ([CYPACK-701](https://linear.app/ceedar/issue/CYPACK-701), [#746](https://github.com/ceedaragents/cyrus/pull/746))
+
+### Changed
+- **Improved changelog handling** - Changelog updates now run as a separate subroutine before git operations, ensuring PR links can be included via amend. The `git-gh` subroutine has been split into `changelog-update`, `git-commit`, and `gh-pr` for better modularity. Non-changelog subroutines now explicitly avoid touching the changelog to prevent conflicts. ([CYPACK-670](https://linear.app/ceedar/issue/CYPACK-670), [#708](https://github.com/ceedaragents/cyrus/pull/708))
+- **Updated dependencies** - Updated `@anthropic-ai/claude-agent-sdk` from 0.1.72 to 0.2.2 ([changelog](https://github.com/anthropics/claude-agent-sdk-typescript/blob/main/CHANGELOG.md#020-2026-01-07)). Updated `zod` from 3.x to 4.3.5 to satisfy peer dependencies. Migrated from `zod-to-json-schema` to Zod v4's native `toJSONSchema()` method. ([CYPACK-700](https://linear.app/ceedar/issue/CYPACK-700))
+
+### Added
+- **Worktree include support** - Add `.worktreeinclude` file support to automatically copy gitignored files (like `.env`, local configs) from the main repository to new worktrees. Files must be listed in both `.worktreeinclude` AND `.gitignore` to be copied. Supports glob patterns like `.env.*` and `**/.claude/settings.local.json`. ([CYPACK-690](https://linear.app/ceedar/issue/CYPACK-690), [#734](https://github.com/ceedaragents/cyrus/pull/734))
+- **Screenshot upload guidance hooks** - Agents are now guided to use `linear_upload_file` when taking screenshots, ensuring screenshots are viewable in Linear comments instead of remaining as local files. Hooks added for `playwright_screenshot`, `mcp__claude-in-chrome__computer`, `mcp__claude-in-chrome__gif_creator`, and `mcp__chrome-devtools__take_screenshot`. ([CYPACK-699](https://linear.app/ceedar/issue/CYPACK-699), [#744](https://github.com/ceedaragents/cyrus/pull/744))
+
+## [0.2.11] - 2026-01-07
+
+### Fixed
+- **Repository tag routing now works with Linear's escaped brackets** - Fixed a bug where `[repo=...]` tags weren't recognized because Linear escapes square brackets in descriptions (e.g., `\[repo=cyrus\]`). The parser now handles both escaped and unescaped formats. ([CYPACK-688](https://linear.app/ceedar/issue/CYPACK-688), [#738](https://github.com/ceedaragents/cyrus/pull/738))
+
+### Packages
+
+#### cyrus-cloudflare-tunnel-client
+- cyrus-cloudflare-tunnel-client@0.2.11
+
+#### cyrus-config-updater
+- cyrus-config-updater@0.2.11
+
+#### cyrus-linear-event-transport
+- cyrus-linear-event-transport@0.2.11
+
+#### cyrus-claude-runner
+- cyrus-claude-runner@0.2.11
+
+#### cyrus-core
+- cyrus-core@0.2.11
+
+#### cyrus-simple-agent-runner
+- cyrus-simple-agent-runner@0.2.11
+
+#### cyrus-gemini-runner
+- cyrus-gemini-runner@0.2.11
+
+#### cyrus-edge-worker
+- cyrus-edge-worker@0.2.11
+
+#### cyrus-ai (CLI)
+- cyrus-ai@0.2.11
+
+## [0.2.10] - 2026-01-06
+
 ### Added
 - **GPT Image 1.5 support** - The image-tools MCP server now supports `gpt-image-1.5`, OpenAI's latest and highest quality image generation model. You can choose between `gpt-image-1.5` (default, best quality), `gpt-image-1`, or `gpt-image-1-mini` (faster, lower cost). ([CYPACK-675](https://linear.app/ceedar/issue/CYPACK-675), [#717](https://github.com/ceedaragents/cyrus/pull/717))
 
