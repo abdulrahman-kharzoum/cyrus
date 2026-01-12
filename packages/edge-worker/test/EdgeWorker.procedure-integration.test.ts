@@ -89,55 +89,34 @@ describe("EdgeWorker - Procedure Routing Integration", () => {
 			expect(currentSubroutine?.name).toBe("verifications");
 			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
 
-			// Step 7: Verifications completes, advance to changelog-update
-			// full-development: coding-activity → verifications → changelog-update → git-commit → gh-pr → concise-summary
+			// Step 7: Verifications completes, advance to git-gh
 			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
-			expect(nextSubroutine?.name).toBe("changelog-update");
+			expect(nextSubroutine?.name).toBe("git-gh");
 			procedureAnalyzer.advanceToNextSubroutine(session, "claude-123");
 
-			// Step 8: Execute changelog-update subroutine
+			// Step 8: Execute git-gh subroutine
 			currentSubroutine = procedureAnalyzer.getCurrentSubroutine(session);
-			expect(currentSubroutine?.name).toBe("changelog-update");
+			expect(currentSubroutine?.name).toBe("git-gh");
 			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
 
-			// Step 9: changelog-update completes, advance to git-commit
-			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
-			expect(nextSubroutine?.name).toBe("git-commit");
-			procedureAnalyzer.advanceToNextSubroutine(session, "claude-123");
-
-			// Step 10: Execute git-commit subroutine
-			currentSubroutine = procedureAnalyzer.getCurrentSubroutine(session);
-			expect(currentSubroutine?.name).toBe("git-commit");
-			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
-
-			// Step 11: git-commit completes, advance to gh-pr
-			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
-			expect(nextSubroutine?.name).toBe("gh-pr");
-			procedureAnalyzer.advanceToNextSubroutine(session, "claude-123");
-
-			// Step 12: Execute gh-pr subroutine
-			currentSubroutine = procedureAnalyzer.getCurrentSubroutine(session);
-			expect(currentSubroutine?.name).toBe("gh-pr");
-			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
-
-			// Step 13: gh-pr completes, advance to concise-summary (last subroutine)
+			// Step 9: git-gh completes, advance to concise-summary (last subroutine)
 			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
 			expect(nextSubroutine?.name).toBe("concise-summary");
 			procedureAnalyzer.advanceToNextSubroutine(session, "claude-123");
 
-			// Step 14: Execute concise-summary (with thought suppression!)
+			// Step 10: Execute concise-summary (with thought suppression!)
 			currentSubroutine = procedureAnalyzer.getCurrentSubroutine(session);
 			expect(currentSubroutine?.name).toBe("concise-summary");
 			expect(currentSubroutine?.suppressThoughtPosting).toBe(true); // Suppression active!
 
-			// Step 15: Check that we're at the last subroutine
+			// Step 11: Check that we're at the last subroutine
 			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
 			expect(nextSubroutine).toBeNull(); // No more subroutines
 			expect(procedureAnalyzer.isProcedureComplete(session)).toBe(true);
 
-			// Verify subroutine history (only 5 recorded because we're still AT concise-summary)
+			// Verify subroutine history (only 3 recorded because we're still AT concise-summary)
 			// History only records completed subroutines when advancing AWAY from them
-			expect(session.metadata.procedure?.subroutineHistory).toHaveLength(5);
+			expect(session.metadata.procedure?.subroutineHistory).toHaveLength(3);
 			expect(session.metadata.procedure?.subroutineHistory[0].subroutine).toBe(
 				"coding-activity",
 			);
@@ -145,13 +124,7 @@ describe("EdgeWorker - Procedure Routing Integration", () => {
 				"verifications",
 			);
 			expect(session.metadata.procedure?.subroutineHistory[2].subroutine).toBe(
-				"changelog-update",
-			);
-			expect(session.metadata.procedure?.subroutineHistory[3].subroutine).toBe(
-				"git-commit",
-			);
-			expect(session.metadata.procedure?.subroutineHistory[4].subroutine).toBe(
-				"gh-pr",
+				"git-gh",
 			);
 			// concise-summary is NOT yet in history because we haven't advanced away from it
 		});
@@ -186,25 +159,16 @@ describe("EdgeWorker - Procedure Routing Integration", () => {
 			expect(currentSubroutine?.name).toBe("primary");
 			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
 
-			// Step 4: Advance to git-commit (no suppression)
+			// Step 4: Advance to git-gh (no suppression)
 			let nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
-			expect(nextSubroutine?.name).toBe("git-commit");
+			expect(nextSubroutine?.name).toBe("git-gh");
 			procedureAnalyzer.advanceToNextSubroutine(session, "claude-456");
 
 			currentSubroutine = procedureAnalyzer.getCurrentSubroutine(session);
-			expect(currentSubroutine?.name).toBe("git-commit");
+			expect(currentSubroutine?.name).toBe("git-gh");
 			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
 
-			// Step 5: Advance to gh-pr (no suppression)
-			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
-			expect(nextSubroutine?.name).toBe("gh-pr");
-			procedureAnalyzer.advanceToNextSubroutine(session, "claude-456");
-
-			currentSubroutine = procedureAnalyzer.getCurrentSubroutine(session);
-			expect(currentSubroutine?.name).toBe("gh-pr");
-			expect(currentSubroutine?.suppressThoughtPosting).toBeUndefined();
-
-			// Step 6: Advance to concise-summary (WITH suppression)
+			// Step 5: Advance to concise-summary (WITH suppression)
 			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
 			expect(nextSubroutine?.name).toBe("concise-summary");
 			procedureAnalyzer.advanceToNextSubroutine(session, "claude-456");
@@ -213,7 +177,7 @@ describe("EdgeWorker - Procedure Routing Integration", () => {
 			expect(currentSubroutine?.name).toBe("concise-summary");
 			expect(currentSubroutine?.suppressThoughtPosting).toBe(true); // Suppression!
 
-			// Step 7: Procedure complete
+			// Step 6: Procedure complete
 			nextSubroutine = procedureAnalyzer.getNextSubroutine(session);
 			expect(nextSubroutine).toBeNull();
 			expect(procedureAnalyzer.isProcedureComplete(session)).toBe(true);

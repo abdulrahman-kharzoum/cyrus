@@ -41,20 +41,10 @@ export const SUBROUTINES = {
 		promptPath: "subroutines/validation-fixer.md",
 		description: "Fix validation failures from the verifications subroutine",
 	},
-	gitCommit: {
-		name: "git-commit",
-		promptPath: "subroutines/git-commit.md",
-		description: "Stage, commit, and push changes to remote",
-	},
-	ghPr: {
-		name: "gh-pr",
-		promptPath: "subroutines/gh-pr.md",
-		description: "Create or update GitHub Pull Request",
-	},
-	changelogUpdate: {
-		name: "changelog-update",
-		promptPath: "subroutines/changelog-update.md",
-		description: "Update changelog (only if changelog files exist)",
+	gitGh: {
+		name: "git-gh",
+		promptPath: "subroutines/git-gh.md",
+		description: "Commit changes and create/update PR",
 	},
 	gitGitlab: {
 		name: "git-gitlab",
@@ -155,8 +145,7 @@ export const PROCEDURES: Record<string, ProcedureDefinition> = {
 			"For documentation/markdown edits that don't require verification",
 		subroutines: [
 			SUBROUTINES.primary,
-			SUBROUTINES.gitCommit,
-			SUBROUTINES.ghPr,
+			SUBROUTINES.gitGh,
 			SUBROUTINES.conciseSummary,
 		],
 	},
@@ -167,9 +156,7 @@ export const PROCEDURES: Record<string, ProcedureDefinition> = {
 		subroutines: [
 			SUBROUTINES.codingActivity,
 			SUBROUTINES.verifications,
-			SUBROUTINES.changelogUpdate,
-			SUBROUTINES.gitCommit,
-			SUBROUTINES.ghPr,
+			SUBROUTINES.gitGh,
 			SUBROUTINES.conciseSummary,
 		],
 	},
@@ -182,9 +169,7 @@ export const PROCEDURES: Record<string, ProcedureDefinition> = {
 			SUBROUTINES.debuggerReproduction,
 			SUBROUTINES.debuggerFix,
 			SUBROUTINES.verifications,
-			SUBROUTINES.changelogUpdate,
-			SUBROUTINES.gitCommit,
-			SUBROUTINES.ghPr,
+			SUBROUTINES.gitGh,
 			SUBROUTINES.conciseSummary,
 		],
 	},

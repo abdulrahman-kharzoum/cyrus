@@ -1703,8 +1703,6 @@ export class EdgeWorker extends EventEmitter {
 
 		// Fetch labels early (needed for label override check)
 		const labels = await this.fetchIssueLabels(fullIssue);
-		// Lowercase labels for case-insensitive comparison
-		const lowercaseLabels = labels.map((label) => label.toLowerCase());
 
 		// Check for label overrides BEFORE AI routing
 		const debuggerConfig = repository.labelPrompts?.debugger;
@@ -1712,7 +1710,7 @@ export class EdgeWorker extends EventEmitter {
 			? debuggerConfig
 			: debuggerConfig?.labels;
 		const hasDebuggerLabel = debuggerLabels?.some((label) =>
-			lowercaseLabels.includes(label.toLowerCase()),
+			labels.includes(label),
 		);
 
 		const orchestratorConfig = repository.labelPrompts?.orchestrator;
@@ -1720,14 +1718,14 @@ export class EdgeWorker extends EventEmitter {
 			? orchestratorConfig
 			: (orchestratorConfig?.labels ?? ["orchestrator"]);
 		const hasOrchestratorLabel = orchestratorLabels?.some((label) =>
-			lowercaseLabels.includes(label.toLowerCase()),
+			labels.includes(label),
 		);
 
 		// Check for graphite label (for graphite-orchestrator combination)
 		const graphiteConfig = repository.labelPrompts?.graphite;
 		const graphiteLabels = graphiteConfig?.labels ?? ["graphite"];
 		const hasGraphiteLabel = graphiteLabels?.some((label) =>
-			lowercaseLabels.includes(label.toLowerCase()),
+			labels.includes(label),
 		);
 
 		// Graphite-orchestrator requires BOTH graphite AND orchestrator labels
@@ -2647,16 +2645,9 @@ export class EdgeWorker extends EventEmitter {
 				fallbackModelOverride: "haiku",
 			};
 		}
-		if (lowercaseLabels.includes("haiku")) {
-			// fallbackModelOverride must be different from modelOverride
-			// (haiku falls back to sonnet for retry scenarios)
-			return {
-				runnerType: "claude",
-				modelOverride: "haiku",
-				fallbackModelOverride: "sonnet",
-			};
-		}
-		// Default to claude if no runner labels found
+
+		// Default to claude if no specific runner labels found
+		// Note: We already handled the planning/question defaults above
 		return {
 			runnerType: "claude",
 			modelOverride: "opus",
@@ -2687,14 +2678,11 @@ export class EdgeWorker extends EventEmitter {
 			return undefined;
 		}
 
-		// Lowercase labels for case-insensitive comparison
-		const lowercaseLabels = labels.map((label) => label.toLowerCase());
-
 		// Check for graphite-orchestrator first (requires BOTH graphite AND orchestrator labels)
 		const graphiteConfig = repository.labelPrompts.graphite;
 		const graphiteLabels = graphiteConfig?.labels ?? ["graphite"];
 		const hasGraphiteLabel = graphiteLabels?.some((label) =>
-			lowercaseLabels.includes(label.toLowerCase()),
+			labels.includes(label),
 		);
 
 		const orchestratorConfig = repository.labelPrompts.orchestrator;
@@ -2702,7 +2690,7 @@ export class EdgeWorker extends EventEmitter {
 			? orchestratorConfig
 			: (orchestratorConfig?.labels ?? ["orchestrator"]);
 		const hasOrchestratorLabel = orchestratorLabels?.some((label) =>
-			lowercaseLabels.includes(label.toLowerCase()),
+			labels.includes(label),
 		);
 
 		// If both graphite AND orchestrator labels are present, use graphite-orchestrator prompt
@@ -2748,6 +2736,8 @@ export class EdgeWorker extends EventEmitter {
 			"builder",
 			"scoper",
 			"orchestrator",
+			"n8n",
+			"supabase",
 		] as const;
 
 		for (const promptType of promptTypes) {
@@ -2757,11 +2747,7 @@ export class EdgeWorker extends EventEmitter {
 				? promptConfig
 				: promptConfig?.labels;
 
-			if (
-				configuredLabels?.some((label) =>
-					lowercaseLabels.includes(label.toLowerCase()),
-				)
-			) {
+			if (configuredLabels?.some((label) => labels.includes(label))) {
 				try {
 					// Load the prompt template from file
 					const __filename = fileURLToPath(import.meta.url);
@@ -4739,9 +4725,9 @@ ${input.userComment}
 		labels?: string[],
 		maxTurns?: number,
 		singleTurn?: boolean,
-	): { config: AgentRunnerConfig; runnerType: "claude" | "gemini" } {
-		// Configure PostToolUse hooks for screenshot tools to guide Claude to use linear_upload_file
-		// This ensures screenshots can be viewed in Linear comments instead of remaining as local files
+		promptType?: string,
+	): { config: AgentRunnerConfig; runnerType: "claude" | "gemini" | "zhipu" } {
+		// Configure PostToolUse hook for playwright screenshots
 		const hooks: Partial<Record<HookEvent, HookCallbackMatcher[]>> = {
 			PostToolUse: [
 				{
@@ -4753,73 +4739,10 @@ ${input.userComment}
 								`Tool ${postToolUseInput.tool_name} completed with response:`,
 								postToolUseInput.tool_response,
 							);
-							const response = postToolUseInput.tool_response as {
-								path?: string;
-							};
-							const filePath = response?.path || "the screenshot file";
 							return {
 								continue: true,
-								additionalContext: `Screenshot taken successfully. To share this screenshot in Linear comments, use the linear_upload_file tool to upload ${filePath}. This will return an asset URL that can be embedded in markdown. You can also use the Read tool to view the screenshot file to analyze the visual content.`,
-							};
-						},
-					],
-				},
-				{
-					matcher: "mcp__claude-in-chrome__computer",
-					hooks: [
-						async (input, _toolUseID, { signal: _signal }) => {
-							const postToolUseInput = input as PostToolUseHookInput;
-							const response = postToolUseInput.tool_response as {
-								action?: string;
-								imageId?: string;
-								path?: string;
-							};
-							// Only provide upload guidance for screenshot actions
-							if (response?.action === "screenshot") {
-								const filePath = response?.path || "the screenshot file";
-								return {
-									continue: true,
-									additionalContext: `Screenshot captured. To share this screenshot in Linear comments, use the linear_upload_file tool to upload ${filePath}. This will return an asset URL that can be embedded in markdown.`,
-								};
-							}
-							return { continue: true };
-						},
-					],
-				},
-				{
-					matcher: "mcp__claude-in-chrome__gif_creator",
-					hooks: [
-						async (input, _toolUseID, { signal: _signal }) => {
-							const postToolUseInput = input as PostToolUseHookInput;
-							const response = postToolUseInput.tool_response as {
-								action?: string;
-								path?: string;
-							};
-							// Only provide upload guidance for export actions
-							if (response?.action === "export") {
-								const filePath = response?.path || "the exported GIF";
-								return {
-									continue: true,
-									additionalContext: `GIF exported successfully. To share this GIF in Linear comments, use the linear_upload_file tool to upload ${filePath}. This will return an asset URL that can be embedded in markdown.`,
-								};
-							}
-							return { continue: true };
-						},
-					],
-				},
-				{
-					matcher: "mcp__chrome-devtools__take_screenshot",
-					hooks: [
-						async (input, _toolUseID, { signal: _signal }) => {
-							const postToolUseInput = input as PostToolUseHookInput;
-							// Extract file path from input (the tool saves to filePath parameter)
-							const toolInput = postToolUseInput.tool_input as {
-								filePath?: string;
-							};
-							const filePath = toolInput?.filePath || "the screenshot file";
-							return {
-								continue: true,
-								additionalContext: `Screenshot saved. To share this screenshot in Linear comments, use the linear_upload_file tool to upload ${filePath}. This will return an asset URL that can be embedded in markdown.`,
+								additionalContext:
+									"Screenshot taken successfully. You should use the Read tool to view the screenshot file to analyze the visual content.",
 							};
 						},
 					],
