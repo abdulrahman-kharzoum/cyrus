@@ -3,8 +3,8 @@
 	"version": "0.2.12",
 	"description": "Cloudflare tunnel client for receiving config updates and webhooks from cyrus-hosted",
 	"type": "module",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",

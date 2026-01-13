@@ -3,8 +3,8 @@
 	"version": "0.2.12",
 	"description": "Configuration update handlers for Cyrus agent",
 	"type": "module",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 
 	"files": [
 		"dist"
