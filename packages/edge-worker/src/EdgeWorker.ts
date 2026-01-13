@@ -1831,6 +1831,8 @@ export class EdgeWorker extends EventEmitter {
 				| "scoper"
 				| "orchestrator"
 				| "graphite-orchestrator"
+				| "n8n"
+				| "supabase"
 				| undefined;
 
 			if (!isMentionTriggered || isLabelBasedPromptRequested) {
@@ -2670,8 +2672,10 @@ export class EdgeWorker extends EventEmitter {
 					| "builder"
 					| "scoper"
 					| "orchestrator"
-					| "graphite-orchestrator";
-		  }
+					| "graphite-orchestrator"
+					| "n8n"
+					| "supabase";
+				}
 		| undefined
 	> {
 		if (!repository.labelPrompts || labels.length === 0) {
@@ -2747,7 +2751,7 @@ export class EdgeWorker extends EventEmitter {
 				? promptConfig
 				: promptConfig?.labels;
 
-			if (configuredLabels?.some((label) => labels.includes(label))) {
+			if (configuredLabels?.some((label: string) => labels.includes(label))) {
 				try {
 					// Load the prompt template from file
 					const __filename = fileURLToPath(import.meta.url);
@@ -4073,7 +4077,7 @@ ${newComment ? `New comment to address:\n${newComment.body}\n\n` : ""}Please ana
 			},
 			"cyrus-tools": createCyrusToolsServer(repository.linearToken, {
 				parentSessionId,
-				onSessionCreated: (childSessionId, parentId) => {
+				onSessionCreated: (childSessionId: string, parentId: string) => {
 					console.log(
 						`[EdgeWorker] Agent session created: ${childSessionId}, mapping to parent ${parentId}`,
 					);
@@ -4083,7 +4087,7 @@ ${newComment ? `New comment to address:\n${newComment.body}\n\n` : ""}Please ana
 						`[EdgeWorker] Parent-child mapping updated: ${this.childToParentAgentSession.size} mappings`,
 					);
 				},
-				onFeedbackDelivery: async (childSessionId, message) => {
+				onFeedbackDelivery: async (childSessionId: string, message: string) => {
 					console.log(
 						`[EdgeWorker] Processing feedback delivery to child session ${childSessionId}`,
 					);
@@ -4733,7 +4737,7 @@ ${input.userComment}
 				{
 					matcher: "playwright_screenshot",
 					hooks: [
-						async (input, _toolUseID, { signal: _signal }) => {
+						async (input: any, _toolUseID: string | undefined, { signal: _signal }: { signal: AbortSignal }) => {
 							const postToolUseInput = input as PostToolUseHookInput;
 							console.log(
 								`Tool ${postToolUseInput.tool_name} completed with response:`,
@@ -4874,7 +4878,9 @@ ${input.userComment}
 			| "builder"
 			| "scoper"
 			| "orchestrator"
-			| "graphite-orchestrator",
+			| "graphite-orchestrator"
+			| "n8n"
+			| "supabase",
 	): string[] {
 		// graphite-orchestrator uses the same tool config as orchestrator
 		const effectivePromptType =
@@ -4966,7 +4972,9 @@ ${input.userComment}
 			| "builder"
 			| "scoper"
 			| "orchestrator"
-			| "graphite-orchestrator",
+			| "graphite-orchestrator"
+			| "n8n"
+			| "supabase",
 	): string[] {
 		// graphite-orchestrator uses the same tool config as orchestrator
 		const effectivePromptType =

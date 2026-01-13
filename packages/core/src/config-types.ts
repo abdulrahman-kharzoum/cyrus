@@ -107,6 +107,16 @@ export interface RepositoryConfig {
 		graphite?: {
 			labels: string[]; // Labels that indicate Graphite stacking (e.g., ["graphite"])
 		};
+		n8n?: {
+			labels: string[]; // Labels that trigger n8n mode
+			allowedTools?: string[] | "readOnly" | "safe" | "all" | "coordinator"; // Tool restrictions for n8n mode
+			disallowedTools?: string[]; // Tools to explicitly disallow in n8n mode
+		};
+		supabase?: {
+			labels: string[]; // Labels that trigger supabase mode
+			allowedTools?: string[] | "readOnly" | "safe" | "all" | "coordinator"; // Tool restrictions for supabase mode
+			disallowedTools?: string[]; // Tools to explicitly disallow in supabase mode
+		};
 	};
 }
 
@@ -163,6 +173,14 @@ export interface EdgeWorkerConfig {
 			disallowedTools?: string[];
 		};
 		"graphite-orchestrator"?: {
+			allowedTools?: string[] | "readOnly" | "safe" | "all" | "coordinator";
+			disallowedTools?: string[];
+		};
+		n8n?: {
+			allowedTools?: string[] | "readOnly" | "safe" | "all" | "coordinator";
+			disallowedTools?: string[];
+		};
+		supabase?: {
 			allowedTools?: string[] | "readOnly" | "safe" | "all" | "coordinator";
 			disallowedTools?: string[];
 		};
