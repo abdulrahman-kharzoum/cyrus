@@ -14,14 +14,4 @@
 	"include": ["src/**/*"],
 	"exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
-			"cyrus-simple-agent-runner": ["packages/simple-agent-runner/src"],
-			"cyrus-config-updater": ["packages/config-updater/src"],
-			"cyrus-cloudflare-tunnel-client": [
-				"packages/cloudflare-tunnel-client/src"
-			],
-			"cyrus-linear-event-transport": ["packages/linear-event-transport/src"]
-		}
-	},
-	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist", "**/*.test.ts"]
-}
+
