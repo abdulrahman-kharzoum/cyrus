@@ -10,11 +10,11 @@ git pull
 
 # IF YOU HAVE CONFLICTS or strange errors:
 # Force reset to the latest approved version (WARNING: discards local changes)
-# git fetch --all
-# git reset --hard origin/main
-# rm -rf packages/*/dist
-# rm -rf apps/*/dist
-
+git fetch --all
+git reset --hard origin/main
+rm -rf packages/*/dist
+rm -rf apps/*/dist
+pnpm -r build
 # Install dependencies
 pnpm install
 ```

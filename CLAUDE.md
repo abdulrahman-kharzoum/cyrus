@@ -365,3 +365,47 @@ For detailed information about Gemini CLI configuration options (settings.json s
 - **Official Documentation**: https://github.com/google-gemini/gemini-cli/blob/main/docs/get-started/configuration.md
 
 The GeminiRunner automatically generates a `~/.gemini/settings.json` file with single-turn model aliases and preview features enabled if one doesn't already exist.
+
+## Expert Prompts & Skill Detection
+
+Cyrus enhances its personality and capabilities based on Linear labels and available skills:
+
+### 1. Automatic Skill Detection
+Cyrus automatically scans `packages/claude-runner/skills/`. If you talk about n8n or Supabase, these skills are automatically loaded into the context by the Claude Code SDK.
+
+### 2. Label-based Expert Prompts
+When a Linear issue is tagged with specific labels, Cyrus loads a specialized system prompt from `packages/edge-worker/prompts/`.
+- **n8n Label**: Activates the **n8n Workflow Expert**. Follows strict rules for silent/parallel execution, template-first discovery, and complex connection mapping.
+- **supabase Label**: Activates the **Supabase Expert**. Uses a specialized bash helper script for database and auth operations.
+
+### 3. Supabase Multi-Account Support
+Cyrus supports multiple Supabase environments via the `SUPABASE_ACCOUNTS` JSON environment variable.
+- **Selection**: Cyrus looks for project labels (e.g., `production`, `staging`) to match an account name in the JSON array.
+- **Tooling**: It uses `select_supabase_account "name"` to switch URLs and Keys on the fly.
+
+## n8n Integration & Expert Instructions
+
+The following instructions guide the AI when using the n8n skills and MCP tools. This ensures production-ready workflows and correct tool usage.
+
+### Core Principles
+1.  **Silent Execution**: Execute tools without commentary. Only respond AFTER all tools complete.
+2.  **Parallel Execution**: When operations are independent, execute them in parallel for maximum performance.
+3.  **Templates First**: ALWAYS check templates before building from scratch (2,709+ available).
+4.  **Multi-Level Validation**: Use `validate_node(mode='minimal')` → `validate_node(mode='full')` → `validate_workflow` pattern.
+5.  **Never Trust Defaults**: ⚠️ CRITICAL: Default parameter values are the #1 source of runtime failures. ALWAYS explicitly configure ALL parameters that control node behavior.
+
+### Workflow Process
+1.  **Start**: Call `tools_documentation()` for best practices.
+2.  **Template Discovery**: Parallel search (`by_metadata`, `by_task`, `keyword`).
+3.  **Node Discovery**: `search_nodes`, `get_node` (Info/Docs/Properties).
+4.  **Configuration**: `get_node` variants. Show workflow architecture to user for approval.
+5.  **Validation**: `validate_node` (minimal -> full). Fix ALL errors.
+6.  **Building**: Build from validated configs. Connect nodes. Add error handling. Use expressions (`$json`).
+7.  **Final Validation**: `validate_workflow`, `validate_workflow_connections`.
+8.  **Deployment**: `n8n_create_workflow` (if API configured).
+
+### Critical Technical Rules
+*   **addConnection**: Requires 4 separate string arguments: `source`, `target`, `sourcePort`, `targetPort`. Do NOT pass objects.
+*   **IF Nodes**: Use the `branch` parameter (`"true"` or `"false"`) to route connections correctly.
+*   **Batch Updates**: Use `n8n_update_partial_workflow` with multiple operations in one call.
+
