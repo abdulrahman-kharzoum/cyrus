@@ -106,6 +106,15 @@ function createEdgeWorkerConfig(): EdgeWorkerConfig {
 		defaultFallbackModel: "haiku",
 		// Enable all tools including Edit(**), Bash, etc. for full testing capability
 		defaultAllowedTools: getAllTools(),
+
+		// Integration configuration
+		n8n: {
+			webhookUrl: process.env.N8N_WEBHOOK_URL,
+			apiKey: process.env.N8N_API_KEY,
+		},
+		supabaseAccounts: process.env.SUPABASE_ACCOUNTS
+			? JSON.parse(process.env.SUPABASE_ACCOUNTS)
+			: undefined,
 	};
 
 	return config;

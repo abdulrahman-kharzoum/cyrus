@@ -240,6 +240,19 @@ export interface EdgeWorkerConfig {
 		enableAttachmentDownload?: boolean; // Download issue attachments (default: false)
 		promptTemplatePath?: string; // Path to custom prompt template
 	};
+
+	// Integration configuration
+	n8n?: {
+		webhookUrl?: string;
+		apiKey?: string;
+	};
+	supabaseAccounts?: Record<
+		string,
+		{
+			url: string;
+			key: string;
+		}
+	>;
 }
 
 /**

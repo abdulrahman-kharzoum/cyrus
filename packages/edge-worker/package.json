@@ -37,6 +37,7 @@
 		"cyrus-zhipu-runner": "workspace:*",
 		"fastify": "^5.2.0",
 		"file-type": "^18.7.0",
+		"ignore": "^5.3.0",
 		"zod": "3.24.1",
 		"zod-to-json-schema": "3.24.1"
 	},
