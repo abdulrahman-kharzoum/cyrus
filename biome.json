@@ -1,7 +1,13 @@
 {
 	"$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
 	"files": {
-		"includes": ["**", "!**/dist-electron"]
+		"includes": [
+			"**",
+			"!**/dist-electron",
+			"!**/skills",
+			"!n8n-skills-main",
+			"!claude-code-supabase-skills-main"
+		]
 	},
 	"linter": {
 		"rules": {
