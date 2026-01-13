@@ -825,7 +825,7 @@ export class AgentSessionManager extends EventEmitter {
 
 		if (Array.isArray(message.content)) {
 			return message.content
-				.map((block) => {
+				.map((block: any) => {
 					if (block.type === "text") {
 						return block.text;
 					} else if (block.type === "tool_use") {
@@ -867,7 +867,7 @@ export class AgentSessionManager extends EventEmitter {
 
 		if (Array.isArray(message.content)) {
 			const toolUse = message.content.find(
-				(block) => block.type === "tool_use",
+				(block: any) => block.type === "tool_use",
 			);
 			if (
 				toolUse &&
@@ -895,7 +895,7 @@ export class AgentSessionManager extends EventEmitter {
 
 		if (Array.isArray(message.content)) {
 			const toolResult = message.content.find(
-				(block) => block.type === "tool_result",
+				(block: any) => block.type === "tool_result",
 			);
 			if (toolResult && "tool_use_id" in toolResult) {
 				return {

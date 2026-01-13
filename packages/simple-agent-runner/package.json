@@ -3,8 +3,14 @@
 	"version": "0.2.8",
 	"description": "Simple agent runner for enumerated responses",
 	"type": "module",
-	"main": "dist/index.js",
-	"types": "dist/index.d.ts",
+	"main": "./dist/index.js",
+	"types": "./dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
 	"files": [
 		"dist"
 	],
@@ -16,14 +22,14 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"dependencies": {
-		"@anthropic-ai/claude-agent-sdk": "^0.2.2",
+		"@anthropic-ai/claude-agent-sdk": "^0.1.72",
 		"cyrus-claude-runner": "workspace:*",
 		"cyrus-core": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/node": "^20.0.0",
 		"typescript": "^5.3.3",
-		"vitest": "^3.1.4"
+		"vitest": "^1.1.0"
 	},
 	"publishConfig": {
 		"access": "public"

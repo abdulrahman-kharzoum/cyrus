@@ -42,6 +42,8 @@ import type {
 	IAgentEventTransport,
 	IIssueTrackerService,
 	Issue,
+	IssueTrackerAgentSession,
+	IssueTrackerAgentSessionPayload,
 	IssueUpdateInput,
 	IssueWithChildren,
 	Label,
@@ -304,7 +306,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Fetch a single issue by ID or identifier.
 	 */
 	async fetchIssue(idOrIdentifier: string): Promise<Issue> {
-		return await this.linearClient.issue(idOrIdentifier);
+		return (await this.linearClient.issue(idOrIdentifier)) as unknown as Issue;
 	}
 
 	/**
@@ -346,7 +348,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			return Object.assign(parentIssue, {
 				children,
 				childCount: children.length,
-			}) as IssueWithChildren;
+			}) as unknown as IssueWithChildren;
 		} catch (error) {
 			const err = new Error(
 				`Failed to fetch children for issue ${issueId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -381,7 +383,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				throw new Error("Updated issue not returned from Linear API");
 			}
 
-			return updatedIssue;
+			return updatedIssue as unknown as Issue;
 		} catch (error) {
 			const err = new Error(
 				`Failed to update issue ${issueId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -448,7 +450,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			});
 
 			return {
-				nodes: commentsConnection.nodes ?? [],
+				nodes: commentsConnection.nodes as any as Comment[],
 				pageInfo: commentsConnection.pageInfo
 					? {
 							hasNextPage: commentsConnection.pageInfo.hasNextPage,
@@ -473,7 +475,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Fetch a single comment by ID.
 	 */
 	async fetchComment(commentId: string): Promise<Comment> {
-		return await this.linearClient.comment({ id: commentId });
+		return (await this.linearClient.comment({
+			id: commentId,
+		})) as unknown as Comment;
 	}
 
 	/**
@@ -508,9 +512,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 
 			// Return comment with empty attachments array (Linear API doesn't expose comment attachments)
 			// Cast to CommentWithAttachments since Linear SDK types are compatible
-			return Object.assign(comment, {
+			return Object.assign(comment as any, {
 				attachments: [],
-			}) as CommentWithAttachments;
+			}) as unknown as CommentWithAttachments;
 		} catch (error) {
 			const err = new Error(
 				`Failed to fetch comment with attachments ${commentId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -573,7 +577,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 				throw new Error("Created comment not returned from Linear API");
 			}
 
-			return createdComment;
+			return createdComment as unknown as Comment;
 		} catch (error) {
 			const err = new Error(
 				`Failed to create comment on issue ${issueId}: ${error instanceof Error ? error.message : String(error)}`,
@@ -601,7 +605,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			});
 
 			return {
-				nodes: teamsConnection.nodes ?? [],
+				nodes: teamsConnection.nodes as any as Team[],
 				pageInfo: teamsConnection.pageInfo
 					? {
 							hasNextPage: teamsConnection.pageInfo.hasNextPage,
@@ -626,7 +630,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Fetch a single team by ID or key.
 	 */
 	async fetchTeam(idOrKey: string): Promise<Team> {
-		return await this.linearClient.team(idOrKey);
+		return (await this.linearClient.team(idOrKey)) as unknown as Team;
 	}
 
 	// ========================================================================
@@ -645,7 +649,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			});
 
 			return {
-				nodes: labelsConnection.nodes ?? [],
+				nodes: labelsConnection.nodes as any as Label[],
 				pageInfo: labelsConnection.pageInfo
 					? {
 							hasNextPage: labelsConnection.pageInfo.hasNextPage,
@@ -670,7 +674,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Fetch a single label by ID or name.
 	 */
 	async fetchLabel(idOrName: string): Promise<Label> {
-		return await this.linearClient.issueLabel(idOrName);
+		return (await this.linearClient.issueLabel(idOrName)) as unknown as Label;
 	}
 
 	/**
@@ -712,7 +716,7 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 			});
 
 			return {
-				nodes: statesConnection.nodes ?? [],
+				nodes: statesConnection.nodes as any as WorkflowState[],
 				pageInfo: statesConnection.pageInfo
 					? {
 							hasNextPage: statesConnection.pageInfo.hasNextPage,
@@ -737,7 +741,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Fetch a single workflow state by ID.
 	 */
 	async fetchWorkflowState(stateId: string): Promise<WorkflowState> {
-		return await this.linearClient.workflowState(stateId);
+		return (await this.linearClient.workflowState(
+			stateId,
+		)) as unknown as WorkflowState;
 	}
 
 	// ========================================================================
@@ -748,14 +754,14 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Fetch a user by ID.
 	 */
 	async fetchUser(userId: string): Promise<User> {
-		return await this.linearClient.user(userId);
+		return (await this.linearClient.user(userId)) as unknown as User;
 	}
 
 	/**
 	 * Fetch the current authenticated user.
 	 */
 	async fetchCurrentUser(): Promise<User> {
-		return await this.linearClient.viewer;
+		return (await this.linearClient.viewer) as unknown as User;
 	}
 
 	// ========================================================================
@@ -767,7 +773,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Uses native SDK method - direct passthrough to Linear SDK.
 	 */
 	createAgentSessionOnIssue(input: AgentSessionCreateOnIssueInput) {
-		return this.linearClient.agentSessionCreateOnIssue(input);
+		return this.linearClient.agentSessionCreateOnIssue(
+			input,
+		) as unknown as Promise<IssueTrackerAgentSessionPayload>;
 	}
 
 	/**
@@ -775,7 +783,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Uses native SDK method - direct passthrough to Linear SDK.
 	 */
 	createAgentSessionOnComment(input: AgentSessionCreateOnCommentInput) {
-		return this.linearClient.agentSessionCreateOnComment(input);
+		return this.linearClient.agentSessionCreateOnComment(
+			input,
+		) as unknown as Promise<IssueTrackerAgentSessionPayload>;
 	}
 
 	/**
@@ -783,7 +793,9 @@ export class LinearIssueTrackerService implements IIssueTrackerService {
 	 * Uses native SDK method - direct passthrough to Linear SDK.
 	 */
 	fetchAgentSession(sessionId: string) {
-		return this.linearClient.agentSession(sessionId);
+		return this.linearClient.agentSession(
+			sessionId,
+		) as unknown as Promise<IssueTrackerAgentSession>;
 	}
 
 	/**

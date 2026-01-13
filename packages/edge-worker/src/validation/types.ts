@@ -3,6 +3,7 @@
  */
 
 import { z } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 
 /**
  * Zod schema for ValidationResult - the single source of truth
@@ -25,19 +26,24 @@ export const ValidationResultSchema = z.object({
 export type ValidationResult = z.infer<typeof ValidationResultSchema>;
 
 /**
- * JSON Schema for ValidationResult - converted from Zod schema using Zod v4's native toJSONSchema()
+ * JSON Schema for ValidationResult - converted from Zod schema
  * Used with Claude SDK structured outputs
  */
-export const VALIDATION_RESULT_SCHEMA =
-	ValidationResultSchema.toJSONSchema() as any as {
-		type: "object";
-		properties: {
-			pass: { type: "boolean"; description: string };
-			reason: { type: "string"; description: string };
-		};
-		required: ["pass", "reason"];
-		additionalProperties: false;
+export const VALIDATION_RESULT_SCHEMA = zodToJsonSchema(
+	ValidationResultSchema,
+	{
+		$refStrategy: "none",
+		target: "jsonSchema7",
+	},
+) as {
+	type: "object";
+	properties: {
+		pass: { type: "boolean"; description: string };
+		reason: { type: "string"; description: string };
 	};
+	required: ["pass", "reason"];
+	additionalProperties: false;
+};
 
 /**
  * Configuration for the validation loop
