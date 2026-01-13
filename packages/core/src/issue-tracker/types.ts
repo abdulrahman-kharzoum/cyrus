@@ -409,11 +409,9 @@ export type IssueTrackerAgentSession = Pick<
  *
  * @see {@link LinearSDK.AgentSessionPayload} - Linear's AgentSessionPayload type
  */
-export type IssueTrackerAgentSessionPayload = Pick<
-	LinearSDK.AgentSessionPayload,
-	"success" | "lastSyncId"
-> & {
-	// AgentSession property - use Promise instead of LinearFetch
+export type IssueTrackerAgentSessionPayload = {
+	success: boolean;
+	lastSyncId: number;
 	agentSession?: Promise<IssueTrackerAgentSession>;
 };
 

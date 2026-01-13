@@ -76,6 +76,8 @@ export type {
 	IIssueTrackerService,
 	Issue,
 	IssueRelation,
+	IssueTrackerAgentSession,
+	IssueTrackerAgentSessionPayload,
 	IssueUnassignedWebhook,
 	IssueUpdateInput,
 	IssueWithChildren,
