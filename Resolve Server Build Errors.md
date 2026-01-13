@@ -1185,7 +1185,7 @@ Fast-forward
 cyrus@Cyrus-Wondura:~/cyrus-ai$ cd packages/edge-worker
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/edge-worker$ npm run build
 
-> cyrus-edge-worker@0.2.8 build
+> cyrus-edge-worker@0.2.12 build
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:63:29 - error TS2307: Cannot find module 'cyrus-zhipu-runner' or its corresponding type declarations.
@@ -1223,7 +1223,7 @@ Found 2 errors in the same file, starting at: src/EdgeWorker.ts:63
 i add the full folder of the zhipu-runner into the server but i still got this error
 yrus@Cyrus-Wondura:~/cyrus-ai/packages/edge-worker$  npm run build
 
-> cyrus-edge-worker@0.2.8 build
+> cyrus-edge-worker@0.2.12 build
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:63:29 - error TS2307: Cannot find module 'cyrus-zhipu-runner' or its corresponding type declarations.
@@ -1393,7 +1393,7 @@ when running this
 cd ../edge-worker && npm run build
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/zhipu-runner$ cd ../edge-worker && npm run build
 
-> cyrus-edge-worker@0.2.8 build
+> cyrus-edge-worker@0.2.12 build
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:63:29 - error TS2307: Cannot find module 'cyrus-zhipu-runner' or its corresponding type declarations.
@@ -1480,7 +1480,7 @@ cyrus@Cyrus-Wondura:~/cyrus-ai$ cd packages/core
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/core$ rm -rf dist 
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/core$ npm run build
 
-> cyrus-core@0.2.8 build
+> cyrus-core@0.2.12 build
 > tsc
 
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/core$ cd ../zhipu-runner
@@ -1492,7 +1492,7 @@ cyrus@Cyrus-Wondura:~/cyrus-ai/packages/zhipu-runner$ npm run build
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/zhipu-runner$ cd ../edge-worker
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/edge-worker$ npm run build
 
-> cyrus-edge-worker@0.2.8 build
+> cyrus-edge-worker@0.2.12 build
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:63:29 - error TS2307: Cannot find module 'cyrus-zhipu-runner' or its corresponding type declarations.
@@ -1584,7 +1584,7 @@ devDependencies:
 Done in 13.8s using pnpm v10.13.1
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-core build
 
-> cyrus-core@0.2.8 build /home/cyrus/cyrus-ai/packages/core
+> cyrus-core@0.2.12 build /home/cyrus/cyrus-ai/packages/core
 > tsc
 
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-zhipu-runner build
@@ -1594,7 +1594,7 @@ cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-zhipu-runner build
 
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-edge-worker build
 
-> cyrus-edge-worker@0.2.8 build /home/cyrus/cyrus-ai/packages/edge-worker
+> cyrus-edge-worker@0.2.12 build /home/cyrus/cyrus-ai/packages/edge-worker
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:63:29 - error TS2307: Cannot find module 'cyrus-zhipu-runner' or its corresponding type declarations.
@@ -1611,7 +1611,7 @@ src/EdgeWorker.ts:4932:22 - error TS2339: Property 'zhipuSessionId' does not exi
 Found 2 errors in the same file, starting at: src/EdgeWorker.ts:63
 
 /home/cyrus/cyrus-ai/packages/edge-worker:
- ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  cyrus-edge-worker@0.2.8 build: `tsc && npm run copy-prompts`
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  cyrus-edge-worker@0.2.12 build: `tsc && npm run copy-prompts`
 Exit status 2
 cyrus@Cyrus-Wondura:~/cyrus-ai$ 
 
@@ -1667,7 +1667,7 @@ cyrus@Cyrus-Wondura:~/cyrus-ai$ cd packages/core
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/core$ rm -rf dist 
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/core$ npm run build
 
-> cyrus-core@0.2.8 build
+> cyrus-core@0.2.12 build
 > tsc
 
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/core$ cd ../zhipu-runner
@@ -1679,7 +1679,7 @@ cyrus@Cyrus-Wondura:~/cyrus-ai/packages/zhipu-runner$ npm run build
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/zhipu-runner$ cd ../edge-worker
 cyrus@Cyrus-Wondura:~/cyrus-ai/packages/edge-worker$ npm run build
 
-> cyrus-edge-worker@0.2.8 build
+> cyrus-edge-worker@0.2.12 build
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:63:29 - error TS2307: Cannot find module 'cyrus-zhipu-runner' or its corresponding type declarations.
@@ -1888,12 +1888,12 @@ devDependencies:
 Done in 13.6s using pnpm v10.13.1
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-core build
 
-> cyrus-core@0.2.8 build /home/cyrus/cyrus-ai/packages/core
+> cyrus-core@0.2.12 build /home/cyrus/cyrus-ai/packages/core
 > tsc
 
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-simple-agent-runner build
 
-> cyrus-simple-agent-runner@0.2.8 build /home/cyrus/cyrus-ai/packages/simple-agent-runner
+> cyrus-simple-agent-runner@0.2.12 build /home/cyrus/cyrus-ai/packages/simple-agent-runner
 > tsc
 
 src/SimpleClaudeRunner.ts:2:30 - error TS2307: Cannot find module 'cyrus-claude-runner' or its corresponding type declarations.
@@ -1905,11 +1905,11 @@ src/SimpleClaudeRunner.ts:2:30 - error TS2307: Cannot find module 'cyrus-claude-
 Found 1 error in src/SimpleClaudeRunner.ts:2
 
 /home/cyrus/cyrus-ai/packages/simple-agent-runner:
- ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  cyrus-simple-agent-runner@0.2.8 build: `tsc`
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  cyrus-simple-agent-runner@0.2.12 build: `tsc`
 Exit status 2
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-claude-runner build
 
-> cyrus-claude-runner@0.2.8 build /home/cyrus/cyrus-ai/packages/claude-runner
+> cyrus-claude-runner@0.2.12 build /home/cyrus/cyrus-ai/packages/claude-runner
 > tsc
 
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-zhipu-runner build
@@ -1919,12 +1919,12 @@ cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-zhipu-runner build
 
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-gemini-runner build
 
-> cyrus-gemini-runner@0.2.8 build /home/cyrus/cyrus-ai/packages/gemini-runner
+> cyrus-gemini-runner@0.2.12 build /home/cyrus/cyrus-ai/packages/gemini-runner
 > tsc && node -e "const fs = require('fs'); if (fs.existsSync('src/prompts')) { fs.cpSync('src/prompts', 'dist/prompts', { recursive: true }); }"
 
 cyrus@Cyrus-Wondura:~/cyrus-ai$ pnpm --filter cyrus-edge-worker build
 
-> cyrus-edge-worker@0.2.8 build /home/cyrus/cyrus-ai/packages/edge-worker
+> cyrus-edge-worker@0.2.12 build /home/cyrus/cyrus-ai/packages/edge-worker
 > tsc && npm run copy-prompts
 
 src/EdgeWorker.ts:25:31 - error TS2307: Cannot find module 'cyrus-config-updater' or its corresponding type declarations.
@@ -1949,7 +1949,7 @@ Errors  Files
      2  src/EdgeWorker.ts:25
      1  src/SharedApplicationServer.ts:2
 /home/cyrus/cyrus-ai/packages/edge-worker:
- ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  cyrus-edge-worker@0.2.8 build: `tsc && npm run copy-prompts`
+ ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL  cyrus-edge-worker@0.2.12 build: `tsc && npm run copy-prompts`
 Exit status 2
 cyrus@Cyrus-Wondura:~/cyrus-ai$ 
 

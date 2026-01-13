@@ -20,7 +20,7 @@ This changelog documents internal development changes, refactors, tooling update
 
 (No internal changes in this release)
 
-## [0.2.8] - 2025-12-28
+## [0.2.12] - 2025-12-28
 
 (No internal changes in this release)
 

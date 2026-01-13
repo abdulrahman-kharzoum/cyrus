@@ -7,7 +7,7 @@ All notable changes to this project will be documented in this file.
 ### Added
 - **GPT Image 1.5 support** - The image-tools MCP server now supports `gpt-image-1.5`, OpenAI's latest and highest quality image generation model. You can choose between `gpt-image-1.5` (default, best quality), `gpt-image-1`, or `gpt-image-1-mini` (faster, lower cost). ([CYPACK-675](https://linear.app/ceedar/issue/CYPACK-675), [#717](https://github.com/ceedaragents/cyrus/pull/717))
 
-## [0.2.8] - 2025-12-28
+## [0.2.12] - 2025-12-28
 
 ### Added
 - **Release procedure** - Added a new `release` procedure with two subroutines for executing software releases. When an issue is classified as a release request, Cyrus will: (1) check for a release skill in the project, (2) check CLAUDE.md or README.md for release instructions, or (3) ask the user via AskUserQuestion how to perform the release. This enables Cyrus to handle release workflows for any project type. ([CYPACK-668](https://linear.app/ceedar/issue/CYPACK-668), [#706](https://github.com/ceedaragents/cyrus/pull/706))
@@ -19,31 +19,31 @@ All notable changes to this project will be documented in this file.
 ### Packages
 
 #### cyrus-cloudflare-tunnel-client
-- cyrus-cloudflare-tunnel-client@0.2.8
+- cyrus-cloudflare-tunnel-client@0.2.12
 
 #### cyrus-config-updater
-- cyrus-config-updater@0.2.8
+- cyrus-config-updater@0.2.12
 
 #### cyrus-linear-event-transport
-- cyrus-linear-event-transport@0.2.8
+- cyrus-linear-event-transport@0.2.12
 
 #### cyrus-claude-runner
-- cyrus-claude-runner@0.2.8
+- cyrus-claude-runner@0.2.12
 
 #### cyrus-core
-- cyrus-core@0.2.8
+- cyrus-core@0.2.12
 
 #### cyrus-simple-agent-runner
-- cyrus-simple-agent-runner@0.2.8
+- cyrus-simple-agent-runner@0.2.12
 
 #### cyrus-gemini-runner
-- cyrus-gemini-runner@0.2.8
+- cyrus-gemini-runner@0.2.12
 
 #### cyrus-edge-worker
-- cyrus-edge-worker@0.2.8
+- cyrus-edge-worker@0.2.12
 
 #### cyrus-ai (CLI)
-- cyrus-ai@0.2.8
+- cyrus-ai@0.2.12
 
 ## [0.2.7] - 2025-12-28
 
