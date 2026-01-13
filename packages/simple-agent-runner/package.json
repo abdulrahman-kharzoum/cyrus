@@ -1,16 +1,10 @@
 {
 	"name": "cyrus-simple-agent-runner",
-	"version": "0.2.12",
+	"version": "0.2.8",
 	"description": "Simple agent runner for enumerated responses",
 	"type": "module",
-	"main": "./dist/index.js",
-	"types": "./dist/index.d.ts",
-	"exports": {
-		".": {
-			"types": "./dist/index.d.ts",
-			"import": "./dist/index.js"
-		}
-	},
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
 	"files": [
 		"dist"
 	],
@@ -29,6 +23,12 @@
 	"devDependencies": {
 		"@types/node": "^20.0.0",
 		"typescript": "^5.3.3",
+		"vitest": "^1.1.0"
+	},
+	"publishConfig": {
+		"access": "public"
+	}
+}
 		"vitest": "^1.1.0"
 	},
 	"publishConfig": {

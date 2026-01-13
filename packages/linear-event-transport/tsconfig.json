@@ -2,13 +2,13 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"outDir": "./dist",
-		"module": "ESNext",
-		"moduleResolution": "node",
-		"baseUrl": "../../",
-		"paths": {
-			"cyrus-core": ["packages/core/src"],
-			"cyrus-claude-parser": ["packages/claude-parser/src"],
-			"cyrus-linear-client": ["packages/linear-client/src"],
+		"rootDir": "./src",
+		"module": "NodeNext",
+		"moduleResolution": "NodeNext"
+	},
+	"include": ["src/**/*"],
+	"exclude": ["node_modules", "dist", "**/*.test.ts"]
+}
 			"cyrus-history-stream": ["packages/history-stream/src"],
 			"cyrus-edge-worker": ["packages/edge-worker/src"],
 			"cyrus-claude-runner": ["packages/claude-runner/src"],

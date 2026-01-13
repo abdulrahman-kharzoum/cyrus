@@ -23,27 +23,6 @@ This skill uses the shared Supabase API helper. Make sure to source it:
 source "$(dirname "${BASH_SOURCE[0]}")/../../scripts/supabase-api.sh"
 ```
 
-### Multi-Account Setup (Optional)
-**Set SUPABASE_ACCOUNTS as JSON array for multiple projects:**
-```bash
-export SUPABASE_ACCOUNTS='[
-  {"name":"production","url":"https://prod.supabase.co","key":"prod-key"},
-  {"name":"staging","url":"https://staging.supabase.co","key":"staging-key"}
-]'
-```
-
-**Select an account before operations:**
-```bash
-# Source the helper script
-source "../scripts/supabase-api.sh"
-
-# List available accounts
-list_supabase_accounts
-
-# Select an account (sets SUPABASE_URL and SUPABASE_KEY)
-select_supabase_account "production"
-```
-
 ## Common Operations
 
 ### SELECT - Query Data
