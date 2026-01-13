@@ -2,11 +2,12 @@
 	"extends": "../../tsconfig.base.json",
 	"compilerOptions": {
 		"outDir": "./dist",
+		"module": "ESNext",
+		"moduleResolution": "node",
+		"baseUrl": ".",
 		"rootDir": "./src",
-		"declaration": true,
-		"declarationMap": true,
-		"sourceMap": true
+		"paths": {}
 	},
 	"include": ["src/**/*"],
-	"exclude": ["node_modules", "dist", "test"]
+	"exclude": ["node_modules", "dist", "**/*.test.ts"]
 }
